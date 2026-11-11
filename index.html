@@ -246,7 +246,7 @@ const CREW=[
   {id:'JP',name:'Jonas Petrauskas',role:'Mission Specialist',color:'#ffb547',base:{hr:68,spo2:97.8,hrv:45,temp:36.7,rr:14},prior:148,module:'hab'}
 ];
 const sim={sec:14*3600+20*60,speed:5,autonomy:true,voice:false,linkLost:false,shelter:false,spe:null,flux:0.4,fx:0,xray:'B2.1',sw:412,demo:[],fluxHist:[],triage:null};
-const env={co2:2450,o2:21.0,press:101.3,temp:22.4,eff:0.97,scrubber:'B'};
+const env={co2:2450,o2:21.0,press:101.3,temp:22.4,eff:0.97,scrubber:'B',failed:null};
 const G={co2:false,co2ok:true};
 let sel=0, logs=[], logId=0, earth=[];
 
@@ -414,11 +414,12 @@ function guardian(){
     const n=CREW.filter(c=>Math.abs(c.z.hr)>1.5||c.v.cog<88).length;
     if(n>=3){
       G.co2=true;G.co2ok=false;
+      const bad=env.scrubber,alt=bad==='A'?'B':'A';
       sim.triage={kind:'env',title:'Environmental root cause: CO₂ build-up',sub:`Correlated physiological drift in ${n}/4 crew`,conf:.94,
         evidence:[`Cabin CO₂ ${env.co2.toFixed(0)} ppm (limit ~2,600 ppm long-term)`,`Scrubber ${env.scrubber} removal efficiency ${(env.eff*100).toFixed(0)}%`,'All crew: HR ↑, HRV ↓, respiration ↑, reaction-time score ↓ — same time, same direction','Pattern is shared → cause is the cabin, not one person\'s body'],
-        actions:['Switch CO₂ removal to backup Scrubber A','Reduce exertion until CO₂ < 3,000 ppm','Schedule Scrubber B bed inspection','Re-test crew cognition after recovery']};
+        actions:[`Switch CO₂ removal to backup Scrubber ${alt}`,'Reduce exertion until CO₂ < 3,000 ppm',`Schedule Scrubber ${bad} bed inspection`,'Re-test crew cognition after recovery']};
       addLog('crit',`Correlated drift in ${n}/4 crew → environmental root cause`,`Instead of ${n} separate medical alarms, Guardian fused the signals: CO₂ ${env.co2.toFixed(0)} ppm, Scrubber ${env.scrubber} at ${(env.eff*100).toFixed(0)}%. Headache and cognitive decline risk.`);
-      decide('warn','Switch CO₂ removal to Scrubber A','Backup scrubber online; CO₂ expected nominal within ~1 h.','Switch scrubber',()=>{env.eff=.96;env.scrubber='A';});
+      decide('warn',`Switch CO₂ removal to Scrubber ${alt}`,`Backup scrubber online; CO₂ expected nominal within ~1 h. Scrubber ${bad} flagged for inspection.`,'Switch scrubber',()=>{env.eff=.96;env.scrubber=alt;});
     }
   }
   if(G.co2&&!G.co2ok&&env.co2<3000&&env.eff>.9){G.co2ok=true;G.co2=false;addLog('ok','Cabin CO₂ back to nominal','Crew physiology returning to personal baselines.');if(sim.triage&&sim.triage.kind==='env')sim.triage=null;}
@@ -446,7 +447,11 @@ function startEVA(){
   addLog('info','EVA started — Aylin Rahimova','Guardian switches to context-aware thresholds: an exertion HR rise is expected and not flagged.');
 }
 function triggerAF(){const j=CREW[3];if(j.afib)return;j.afib=true;toast('Scenario injected: silent arrhythmia (Guardian is not told)');}
-function triggerCO2(){env.eff=.52;env.scrubber='B';toast('Scenario injected: Scrubber B bed saturating (Guardian is not told)');}
+function triggerCO2(){
+  if(env.eff<.8||(G.co2&&!G.co2ok)){toast('A CO₂ scrubber fault is already in progress');return;}
+  const u=env.scrubber;env.eff=.52;env.failed=u;
+  toast(`Scenario injected: Scrubber ${u} bed saturating (Guardian is not told)`);
+}
 function toggleLink(){
   sim.linkLost=!sim.linkLost;$('#sLink').innerHTML=sim.linkLost?'<i>⌁</i>Restore Earth link':'<i>⌁</i>Cut Earth link (solar conjunction)';
   if(sim.linkLost)addLog('crit','Earth link lost — solar conjunction','Guardian is now fully autonomous. Decisions are logged to the ledger and queued for Mission Control.');
@@ -566,12 +571,35 @@ function buildShip(){
     s.push(`<text id="rt-${k}" x="${m.x+m.w/2}" y="${m.y+m.h+(k==='eva'?14:-6)}" text-anchor="middle" fill="#7d8db0" font-family="JetBrains Mono" font-size="9.5"></text>`);
   }
   s.push(`<text x="${MODULES.shelter.x+MODULES.shelter.w/2}" y="${MODULES.shelter.y+14}" text-anchor="middle" fill="#6fa8ff" font-family="JetBrains Mono" font-size="8.5">20 g/cm² H₂O wall</text>`);
+  // ECLSS · CO₂ scrubbers A/B (life support, not a crew module)
+  s.push(`<text x="582" y="238" text-anchor="middle" fill="#7d8db0" font-family="Space Grotesk" font-size="10.5" letter-spacing="1">ECLSS · CO₂ SCRUBBERS</text>`);
+  [['A',478],['B',590]].forEach(([u,x])=>{
+    s.push(`<line id="sl-${u}" x1="${x+46}" y1="212" x2="${x+46}" y2="244" stroke="#26375d" stroke-width="2" stroke-dasharray="4 3"/>`);
+    s.push(`<rect id="sb-${u}" x="${x}" y="244" width="92" height="38" rx="8" fill="#101d36" stroke="#26375d" stroke-width="1.5"/>`);
+    s.push(`<text id="sn-${u}" x="${x+46}" y="259" text-anchor="middle" fill="#cfd8ee" font-family="JetBrains Mono" font-size="10" font-weight="600">SCRUBBER ${u}</text>`);
+    s.push(`<text id="ss-${u}" x="${x+46}" y="274" text-anchor="middle" fill="#7d8db0" font-family="JetBrains Mono" font-size="9"></text>`);
+  });
   CREW.forEach(c=>{s.push(`<g id="cr-${c.id}"><circle r="17" fill="none" stroke="${c.color}" stroke-width="2" opacity="0" class="halo"/><circle r="12" fill="${c.color}"/><text y="4" text-anchor="middle" font-family="Space Grotesk" font-weight="700" font-size="10" fill="#061021">${c.id}</text></g>`);});
   $('#ship').innerHTML=s.join('');
 }
 function updateShip(t){
   for(const k of Object.keys(MODULES)){const r=moduleRate(k);$('#ov-'+k).setAttribute('opacity',clamp((r-.05)/14,0,.55).toFixed(3));const el=$('#rt-'+k);el.textContent=r.toFixed(r<1?3:1)+' mSv/h';el.setAttribute('fill',r>1?'#ff8aa0':'#7d8db0');}
+  updateScrubbers(t);
   CREW.forEach(c=>{const tp=targetPos(c);c.pos.x+=(tp.x-c.pos.x)*.18;c.pos.y+=(tp.y-c.pos.y)*.18;const g=$('#cr-'+c.id);g.setAttribute('transform',`translate(${c.pos.x.toFixed(1)} ${c.pos.y.toFixed(1)})`);const halo=g.querySelector('.halo');const on=c.status==='ALERT'||sel===c.idx;halo.setAttribute('opacity',on?(c.status==='ALERT'?(.5+.5*Math.sin(t/180)).toFixed(2):'.8'):'0');halo.setAttribute('stroke',c.status==='ALERT'?'#ff5470':c.color);});
+}
+
+function updateScrubbers(t){
+  const pulse=(.55+.45*Math.sin(t/200)).toFixed(2);
+  ['A','B'].forEach(u=>{
+    const active=env.scrubber===u, faulty=active?env.eff<.8:env.failed===u;
+    let stroke='#26375d',fill='#101d36',txt='STANDBY',col='#7d8db0',line='#26375d',op='1';
+    if(active&&!faulty){stroke='#3ddc97';fill='#0e2a24';txt=`ACTIVE · ${Math.round(env.eff*100)}%`;col='#3ddc97';line='#3ddc97';}
+    else if(active&&faulty){stroke='#ff5470';fill='#3a1220';txt=`FAULT · ${Math.round(env.eff*100)}%`;col='#ff8aa0';line='#ff5470';op=pulse;}
+    else if(faulty){stroke='#ff5470';fill='#2a1019';txt='OFFLINE · INSPECT';col='#ff8aa0';}
+    const b=$('#sb-'+u);b.setAttribute('stroke',stroke);b.setAttribute('fill',fill);b.setAttribute('opacity',op);
+    const ss=$('#ss-'+u);ss.textContent=txt;ss.setAttribute('fill',col);
+    $('#sl-'+u).setAttribute('stroke',line);
+  });
 }
 
 /* ---------- canvases ---------- */
