@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Solar Guardian — Pulse sensor test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#060a13;--panel:#0c1322;--panel2:#111b30;--line:#1b2742;--txt:#e2eaf8;--mut:#7d8db0;--cy:#4fd1ff;--am:#ffb547;--rd:#ff5470;--gr:#3ddc97}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:radial-gradient(900px 500px at 0% -10%,#22123a 0%,transparent 60%),var(--bg);color:var(--txt);font-family:'Space Grotesk',system-ui,sans-serif;min-height:100vh}
+.wrap{max-width:860px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-left)) 40px}
+h1{font-size:20px;letter-spacing:.5px;margin:0 0 4px}
+.sub{color:var(--mut);font-size:13px;margin-bottom:18px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+.grid{display:grid;grid-template-columns:260px 1fr;gap:14px}
+@media(max-width:700px){.grid{grid-template-columns:1fr}}
+.bpm{font-family:'JetBrains Mono',monospace;font-size:72px;font-weight:600;line-height:1;color:var(--gr);display:flex;align-items:baseline;gap:8px}
+.bpm small{font-size:16px;color:var(--mut)}
+.bpm.wait{color:var(--mut)}
+.heart{font-size:34px;color:var(--rd);transition:transform .08s;display:inline-block}
+.heart.beat{transform:scale(1.35)}
+.status{margin-top:10px;font-size:14px;min-height:40px}
+.status.ok{color:var(--gr)}.status.warn{color:var(--am)}.status.bad{color:var(--rd)}
+.qbar{height:8px;border-radius:5px;background:var(--panel2);overflow:hidden;margin-top:8px}
+.qbar i{display:block;height:100%;width:0;background:var(--am);transition:width .2s}
+.lab{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mut);margin-top:14px}
+canvas{width:100%;height:180px;display:block;background:#050c0a;border:1px solid #12352a;border-radius:10px}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center}
+button,select{font:inherit;font-size:14px;color:var(--txt);background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px 14px;cursor:pointer}
+button.pri{background:#0f2c24;border-color:#1f6b52;color:var(--gr)}
+button:focus-visible,select:focus-visible{outline:2px solid var(--cy);outline-offset:2px}
+.mono{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--mut)}
+video{display:none}
+ol{margin:8px 0 0;padding-left:20px;color:var(--mut);font-size:14px;line-height:1.6}
+.kv{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--mut);margin-top:6px}
+.kv b{color:var(--txt);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>SOLAR GUARDIAN · Pulse sensor test</h1>
+  <div class="sub">Camera photoplethysmography (PPG): your heart rate from the colour of your fingertip. Video never leaves this device. Not a medical device.</div>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="bpm wait" id="bpm">--<small>bpm</small></div>
+      <div style="margin-top:6px"><span class="heart" id="heart">♥</span></div>
+      <div class="status warn" id="status">Press Start and allow the camera.</div>
+      <div class="lab">Signal quality</div>
+      <div class="qbar"><i id="qbar"></i></div>
+      <div class="kv"><span>Finger</span><b id="kFinger">—</b></div>
+      <div class="kv"><span>Red level</span><b id="kRed">—</b></div>
+      <div class="kv"><span>Frame rate</span><b id="kFps">—</b></div>
+      <div class="kv"><span>Beat-to-beat</span><b id="kPk">—</b></div>
+    </div>
+    <div class="panel">
+      <div class="lab" style="margin-top:0">Pulse wave · last 6 s</div>
+      <canvas id="wave" width="1200" height="360"></canvas>
+      <div class="row">
+        <button class="pri" id="bStart">Start</button>
+        <button id="bStop">Stop</button>
+        <select id="cam" aria-label="Camera"></select>
+        <button id="bTorch" hidden>Flashlight</button>
+      </div>
+      <div class="lab">How to measure</div>
+      <ol>
+        <li>Cover the camera lens fully with your fingertip. Press lightly, not hard.</li>
+        <li>Laptop: shine a phone flashlight through your finger from behind (nail side).</li>
+        <li>Phone: use the back camera; the flashlight turns on automatically.</li>
+        <li>Sit still for 15–20 seconds.</li>
+      </ol>
+      <div class="mono" id="mode" style="margin-top:10px"></div>
+    </div>
+  </div>
+</div>
+<video id="v" playsinline muted></video>
+<canvas id="grab" width="48" height="36" hidden></canvas>
+
+<script>
+const $=s=>document.querySelector(s);
+const FS=30, WIN=12, MIN_SEC=6;           // resample rate, analysis window, minimum data
+const params=new URLSearchParams(location.search);
+const SIM=params.has('sim'), SIM_HR=+params.get('hr')||72;
+let stream=null, track=null, running=false, samples=[], lastFrameT=0, frameTimes=[];
+let estimates=[], shownBpm=null, lastBeatFlash=0, lastAnalysis=0, fingerOn=false;
+const gctx=$('#grab').getContext('2d',{willReadFrequently:true});
+
+/* ---------- camera ---------- */
+async function listCams(){
+  try{const d=(await navigator.mediaDevices.enumerateDevices()).filter(x=>x.kind==='videoinput');
+    const sel=$('#cam'),cur=track&&track.getSettings().deviceId;sel.innerHTML='';
+    d.forEach((x,i)=>{const o=document.createElement('option');o.value=x.deviceId;o.textContent=x.label||('Camera '+(i+1));if(x.deviceId===cur)o.selected=true;sel.appendChild(o);});
+    sel.hidden=d.length<2;}catch(e){}
+}
+async function start(deviceId){
+  stop();
+  if(SIM){running=true;samples=[];estimates=[];simLoop();setStatus('warn','Simulated pulse running…');return;}
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){setStatus('bad','This browser cannot open the camera. Use Chrome or Edge.');return;}
+  try{
+    const video=deviceId?{deviceId:{exact:deviceId}}:{facingMode:{ideal:'environment'}};
+    Object.assign(video,{width:{ideal:320},height:{ideal:240},frameRate:{ideal:30}});
+    stream=await navigator.mediaDevices.getUserMedia({video,audio:false});
+  }catch(e){setStatus('bad','Camera blocked or not found ('+e.name+'). Allow camera access and try again.');return;}
+  track=stream.getVideoTracks()[0];
+  const v=$('#v');v.srcObject=stream;await v.play();
+  running=true;samples=[];estimates=[];frameTimes=[];shownBpm=null;
+  listCams();setupTorch();
+  setStatus('warn','Cover the camera with your fingertip…');
+  if(v.requestVideoFrameCallback){const cb=(now,meta)=>{if(!running)return;grab(now);v.requestVideoFrameCallback(cb);};v.requestVideoFrameCallback(cb);}
+  else{const loop=()=>{if(!running)return;if(v.currentTime!==lastFrameT){lastFrameT=v.currentTime;grab(performance.now());}requestAnimationFrame(loop);};loop();}
+}
+function stop(){running=false;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;track=null;}$('#bTorch').hidden=true;}
+async function setupTorch(){
+  try{const caps=track.getCapabilities?track.getCapabilities():{};if(!caps.torch)return;
+    $('#bTorch').hidden=false;await track.applyConstraints({advanced:[{torch:true}]});$('#bTorch').dataset.on='1';}catch(e){}
+}
+$('#bTorch').onclick=async()=>{try{const on=$('#bTorch').dataset.on!=='1';await track.applyConstraints({advanced:[{torch:on}]});$('#bTorch').dataset.on=on?'1':'0';}catch(e){}};
+
+/* ---------- one number per frame: mean red of the centre ---------- */
+function grab(now){
+  const v=$('#v');if(!v.videoWidth)return;
+  gctx.drawImage(v,0,0,48,36);
+  const px=gctx.getImageData(0,0,48,36).data;
+  let r=0,g=0,b=0,sat=0,n=0;
+  for(let y=6;y<30;y++)for(let x=8;x<40;x++){const i=(y*48+x)*4;r+=px[i];g+=px[i+1];b+=px[i+2];if(px[i]>=250)sat++;n++;}
+  addSample(now/1000,r/n,g/n,b/n,sat/n);
+}
+function addSample(t,r,g,b,satFrac){
+  frameTimes.push(t);if(frameTimes.length>60)frameTimes.shift();
+  // finger check: lens covered + light through tissue = strongly red frame
+  let state;
+  if(r<35)state='dark';else if(satFrac>.85)state='bright';else if(r>g*1.5&&r>b*1.5)state='on';else state='off';
+  fingerOn=state==='on';
+  $('#kFinger').textContent={on:'detected',off:'not covering',dark:'too dark',bright:'too bright'}[state];
+  $('#kRed').textContent=r.toFixed(1);
+  if(frameTimes.length>10)$('#kFps').textContent=((frameTimes.length-1)/(frameTimes.at(-1)-frameTimes[0])).toFixed(0)+' fps';
+  if(!fingerOn){samples=[];estimates=[];shownBpm=null;showBpm(null);
+    setStatus(state==='dark'?'bad':'warn',{off:'Cover the camera lens fully with your fingertip.',dark:'Too dark: shine a flashlight through your finger from behind.',bright:'Too bright: move the light a little further away.'}[state]);
+    setQ(0);drawWave(null);return;}
+  samples.push([t,r]);while(samples.length&&t-samples[0][0]>WIN)samples.shift();
+  if(t-lastAnalysis>.25){lastAnalysis=t;analyse();}
+}
+
+/* ---------- signal processing ---------- */
+function biquad(type,f0,Q){
+  const w=2*Math.PI*f0/FS,c=Math.cos(w),a=Math.sin(w)/(2*Q);let b0,b1,b2;
+  if(type==='lp'){b0=(1-c)/2;b1=1-c;b2=(1-c)/2;}else{b0=(1+c)/2;b1=-(1+c);b2=(1+c)/2;}
+  const a0=1+a;return [b0/a0,b1/a0,b2/a0,-2*c/a0,(1-a)/a0];
+}
+const HP=biquad('hp',.5,.707), LP=biquad('lp',4,.707);   // keeps 40–200 bpm and its first harmonics
+function runF(x,[b0,b1,b2,a1,a2]){const y=new Array(x.length);let x1=x[0],x2=x[0],y1=0,y2=0;
+  // start from steady state to limit the edge transient
+  if(b0+b1+b2>.5){y1=y2=x[0];}
+  for(let i=0;i<x.length;i++){const v=b0*x[i]+b1*x1+b2*x2-a1*y1-a2*y2;x2=x1;x1=x[i];y2=y1;y1=v;y[i]=v;}return y;}
+function filtfilt(x,f){return runF(runF(x,f).reverse(),f).reverse();}
+function analyse(){
+  if(!samples.length)return;
+  const t0=samples[0][0],t1=samples.at(-1)[0],dur=t1-t0;
+  const need=MIN_SEC;
+  if(dur<need){setStatus('warn',`Finger detected. Hold still… ${Math.ceil(need-dur)} s`);setQ(dur/need*.4);drawWave(null);return;}
+  // resample to a uniform 30 Hz grid
+  const n=Math.floor(dur*FS),x=new Array(n);let j=0;
+  for(let i=0;i<n;i++){const t=t0+i/FS;while(j<samples.length-2&&samples[j+1][0]<t)j++;
+    const [ta,ra]=samples[j],[tb,rb]=samples[j+1]||samples[j];x[i]=tb>ta?ra+(rb-ra)*(t-ta)/(tb-ta):ra;}
+  const mean=x.reduce((a,b)=>a+b,0)/n;
+  // more blood = less light, so invert: peaks of y are heartbeats
+  let y=x.map(v=>mean-v);
+  y=filtfilt(filtfilt(y,HP),LP);
+  const cut=Math.round(FS*.6);y=y.slice(cut,y.length-cut);
+  const sd=Math.sqrt(y.reduce((a,b)=>a+b*b,0)/y.length)||1;y=y.map(v=>v/sd);
+  // spectrum 40–200 bpm
+  const pw=[];let best=0,bi=0,tot=0;
+  for(let bpm=40;bpm<=200;bpm++){const w=2*Math.PI*bpm/60/FS;let re=0,im=0;
+    for(let i=0;i<y.length;i++){re+=y[i]*Math.cos(w*i);im+=y[i]*Math.sin(w*i);}
+    const p=re*re+im*im;pw.push(p);tot+=p;if(p>best){best=p;bi=pw.length-1;}}
+  let near=0;for(let k=Math.max(0,bi-4);k<=Math.min(pw.length-1,bi+4);k++)near+=pw[k];
+  const hi=2*bi+40,h=hi<pw.length?hi:-1; // first harmonic (2× bpm) also counts as signal
+  let harm=0;if(h>=0)for(let k=Math.max(0,h-4);k<=Math.min(pw.length-1,h+4);k++)harm+=pw[k];
+  const snr=(near+harm)/Math.max(1e-9,tot-near-harm);
+  // harmonic check: a pulse wave has strong harmonics; if 1/3 or 1/2 of the peak rate also carries
+  // real power, that lower rate is the true heart rate (otherwise 48 bpm can read as 96 or 144)
+  for(const k of [3,2]){const b=Math.round((40+bi)/k);if(b<40)continue;
+    let m=-1,mi=-1;for(let q=Math.max(40,b-3);q<=b+3;q++){if(pw[q-40]>m){m=pw[q-40];mi=q-40;}}
+    if(m>=.3*best){bi=mi;break;}}
+  let fb=bi;if(bi>0&&bi<pw.length-1){const a=pw[bi-1],b=pw[bi],c=pw[bi+1];fb=bi+.5*(a-c)/(a-2*b+c||1);}
+  const specBpm=40+fb;
+  // peaks in the time domain (beats)
+  // min gap adapts to the spectral rate so the small second bump of each beat (dicrotic wave) is not counted
+  const minGap=Math.round(FS*Math.max(60/220,.6*60/specBpm)),pk=[];
+  for(let i=1;i<y.length-1;i++){if(y[i]>.35&&y[i]>=y[i-1]&&y[i]>y[i+1]){if(pk.length&&i-pk.at(-1)<minGap){if(y[i]>y[pk.at(-1)])pk[pk.length-1]=i;}else pk.push(i);}}
+  let pkBpm=null;
+  if(pk.length>=4){const iv=[];for(let i=1;i<pk.length;i++)iv.push((pk[i]-pk[i-1])/FS);iv.sort((a,b)=>a-b);pkBpm=60/iv[Math.floor(iv.length/2)];}
+  $('#kPk').textContent=pkBpm?pkBpm.toFixed(0)+' bpm':'—';
+  const agree=pkBpm&&Math.abs(pkBpm-specBpm)<10;
+  const q=Math.max(0,Math.min(1,(snr-.3)/1.2))*(agree?1:.5);setQ(q);
+  drawWave(y,pk);
+  // beat flash: newest peak near the end of the window
+  if(pk.length){const tp=t0+(pk.at(-1)+cut)/FS;if(t1-tp<.45&&tp-lastBeatFlash>.3){lastBeatFlash=tp;const ht=$('#heart');ht.classList.add('beat');setTimeout(()=>ht.classList.remove('beat'),120);}}
+  if(snr>.45&&agree){estimates.push(specBpm);if(estimates.length>6)estimates.shift();}
+  else{if(estimates.length)estimates.shift();setStatus('warn','Signal noisy: keep your finger still and press lightly.');}
+  if(estimates.length>=3){const s=[...estimates].sort((a,b)=>a-b),med=s[Math.floor(s.length/2)];
+    if(s.at(-1)-s[0]<8){shownBpm=med;showBpm(med);setStatus('ok','Stable reading. Keep still for a few more seconds to confirm.');return;}}
+  if(shownBpm==null)showBpm(null);
+  if(snr>.45&&agree)setStatus('warn','Reading… hold still.');
+}
+
+/* ---------- UI ---------- */
+function setStatus(c,t){const s=$('#status');s.className='status '+c;s.textContent=t;}
+function setQ(q){const b=$('#qbar');b.style.width=Math.round(q*100)+'%';b.style.background=q>.65?'var(--gr)':q>.35?'var(--am)':'var(--rd)';}
+function showBpm(v){const b=$('#bpm');if(v==null){b.className='bpm wait';b.innerHTML='--<small>bpm</small>';}else{b.className='bpm';b.innerHTML=Math.round(v)+'<small>bpm</small>';}}
+const wctx=$('#wave').getContext('2d');
+function drawWave(y,pk){
+  const c=$('#wave'),W=c.width,H=c.height;wctx.clearRect(0,0,W,H);
+  wctx.strokeStyle='#0f2a22';wctx.lineWidth=1;for(let x=0;x<W;x+=W/12){wctx.beginPath();wctx.moveTo(x,0);wctx.lineTo(x,H);wctx.stroke();}
+  if(!y)return;
+  const n=Math.min(y.length,FS*6),off=y.length-n,sx=W/(n-1),sy=H/7;
+  wctx.strokeStyle='#3ddc97';wctx.lineWidth=3;wctx.shadowColor='rgba(61,220,151,.6)';wctx.shadowBlur=8;wctx.beginPath();
+  for(let i=0;i<n;i++){const X=i*sx,Y=H/2-y[off+i]*sy;i?wctx.lineTo(X,Y):wctx.moveTo(X,Y);}wctx.stroke();wctx.shadowBlur=0;
+  wctx.fillStyle='#ff5470';(pk||[]).forEach(p=>{if(p<off)return;wctx.beginPath();wctx.arc((p-off)*sx,H/2-y[p]*sy,6,0,7);wctx.fill();});
+}
+
+/* ---------- simulation mode (?sim=1&hr=72): tests the pipeline without a camera ---------- */
+function simLoop(){
+  const t0=performance.now()/1000;let k=0;
+  const tick=()=>{if(!running)return;const t=performance.now()/1000;
+    while(k/FS<t-t0){const ts=t0+k/FS+(Math.random()-.5)*.008,ph=((ts*SIM_HR/60)%1);
+      const pulse=Math.exp(-((ph-.15)**2)/.004)+.35*Math.exp(-((ph-.45)**2)/.006);
+      const r=170-2.2*pulse+3*Math.sin(ts*.4)+(Math.random()-.5)*.9;addSample(ts,r,60,50,0);k++;}
+    setTimeout(tick,33);};tick();
+}
+
+$('#bStart').onclick=()=>start($('#cam').value||undefined);
+$('#bStop').onclick=()=>{stop();setStatus('warn','Stopped.');};
+$('#cam').onchange=()=>start($('#cam').value);
+$('#cam').hidden=true;
+$('#mode').textContent=SIM?`Simulation mode: synthetic pulse at ${SIM_HR} bpm (no camera).`:'';
+</script>
+</body>
+</html>
