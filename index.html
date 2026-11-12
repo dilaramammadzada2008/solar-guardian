@@ -92,6 +92,9 @@ main{display:grid;grid-template-columns:300px minmax(0,1fr) 370px;gap:14px;paddi
 .lslab{font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--mut);margin:12px 0 5px}
 .lsq{height:7px;border-radius:4px;background:#0e1830;overflow:hidden;margin-bottom:8px}
 .lsq i{display:block;height:100%;width:0;background:var(--am);transition:width .2s}
+.lsmode{display:inline-flex;margin-bottom:12px}
+#lsView{width:100%;aspect-ratio:4/3;display:block;background:#000;border-radius:10px;margin-bottom:8px}
+#lsView[hidden],.lsp .dl[hidden]{display:none}
 #lsWave{width:100%;height:150px;display:block;background:#050c0a;border:1px solid #12352a;border-radius:10px}
 .lshelp{font-size:12px;color:var(--mut);margin-top:8px;line-height:1.5}
 .btn:disabled{opacity:.45;cursor:not-allowed}
@@ -248,20 +251,28 @@ main{display:grid;grid-template-columns:300px minmax(0,1fr) 370px;gap:14px;paddi
 <div id="toast"></div>
 <div id="lsModal" class="lsm" hidden>
   <div class="lsp panel" role="dialog" aria-label="Live heart sensor">
-    <div class="ph"><h3>Live heart sensor · camera PPG</h3><span class="chip" id="lsChip">camera off</span></div>
+    <div class="ph"><h3>Live heart sensor</h3><span class="chip" id="lsChip">camera off</span></div>
+    <div class="seg lsmode">
+      <button class="btn on" id="lsModeF">☝ Fingertip</button>
+      <button class="btn" id="lsModeV">🙂 Face · contactless</button>
+    </div>
     <div class="lsg">
       <div>
         <div class="lsbpm wait" id="lsBpm">--<small>bpm</small></div>
         <div class="lsrow"><span class="lsheart" id="lsHeart">♥</span><span class="lsst" id="lsStatus">Press Start and allow the camera.</span></div>
         <div class="lslab">Signal quality</div>
         <div class="lsq"><i id="lsQ"></i></div>
-        <div class="dl"><span>Finger</span><b id="lsFinger">—</b></div>
-        <div class="dl"><span>HRV ≈ (RMSSD, rough)</span><b id="lsHrv">—</b></div>
+        <div class="dl"><span id="lsSrcLab">Finger</span><b id="lsFinger">—</b></div>
+        <div class="dl" id="lsLightRow" hidden><span>Light</span><b id="lsLight">—</b></div>
+        <div class="dl" id="lsMotionRow" hidden><span>Motion</span><b id="lsMotion">—</b></div>
+        <div class="dl" id="lsExpRow" hidden><span>Exposure</span><b id="lsExp">—</b></div>
+        <div class="dl" id="lsHrvRow"><span>HRV ≈ (RMSSD, rough)</span><b id="lsHrv">—</b></div>
         <div class="dl"><span>Frame rate</span><b id="lsFps">—</b></div>
       </div>
       <div>
+        <canvas id="lsView" width="480" height="360" hidden></canvas>
         <canvas id="lsWave" width="1000" height="300"></canvas>
-        <div class="lshelp">Cover the camera with your fingertip and press lightly. On a laptop, shine a phone flashlight through the finger from the nail side. Sit still for 15–20 s.</div>
+        <div class="lshelp" id="lsHelp"></div>
       </div>
     </div>
     <div class="lsrow" style="margin-top:12px;flex-wrap:wrap">
@@ -273,11 +284,12 @@ main{display:grid;grid-template-columns:300px minmax(0,1fr) 370px;gap:14px;paddi
       <button class="btn" id="lsAdd" disabled>Add to crew</button>
       <button class="btn" id="lsClose">Close</button>
     </div>
-    <div class="cap" style="margin-top:10px">Video never leaves this device: each frame becomes one number and nothing is stored. Demonstration of the sensing principle, not a medical device.</div>
+    <div class="cap" style="margin-top:10px">Video never leaves this device: each frame becomes a few numbers and nothing is stored. Demonstration of the sensing principle, not a medical device.</div>
   </div>
 </div>
 <video id="lsVideo" playsinline muted style="display:none"></video>
 <canvas id="lsGrab" width="48" height="36" style="display:none"></canvas>
+<canvas id="lsGrabF" width="160" height="120" style="display:none"></canvas>
 
 <script>
 "use strict";
@@ -812,20 +824,40 @@ renderPanels();
 setInterval(tick,200);requestAnimationFrame(frame);
 
 /* ---------- live heart sensor: real camera PPG for a guest (judge) ----------
-   Each frame becomes one number (mean red of the fingertip); nothing is stored.
-   Pipeline: resample 30 Hz → band-pass 0.5–4 Hz → spectrum 40–200 bpm with harmonic check
-   → beat peaks must agree → shown only when stable. Test without camera: ?pulsesim=72 */
+   Two modes, one pipeline:
+   - Fingertip: mean red of a fingertip covering the camera (light shines through the tissue).
+   - Face (contactless rPPG): mean RGB of forehead + cheeks, combined with the POS method
+     (Wang et al. 2017) so brightness changes that hit all colours equally cancel out.
+   Then: resample 30 Hz → band-pass → spectrum with harmonic check → beat peaks must agree
+   → shown only when stable. Each frame becomes a few numbers; nothing is stored.
+   Test without camera: ?pulsesim=72 (works in both modes). */
 const LS=(()=>{
-  const FS=30,WIN=12,MIN_SEC=6,SIMHR=+new URLSearchParams(location.search).get('pulsesim')||0;
-  const S={stream:null,track:null,running:false,samples:[],frameT:[],est:[],bpm:null,hrv:null,q:0,finger:'—',
-    lastA:0,lastBeat:0,added:false,announced:false,lastT:0};
-  const gctx=$('#lsGrab').getContext('2d',{willReadFrequently:true}),wctx=$('#lsWave').getContext('2d');
-  function bq(type,f0){const w=2*Math.PI*f0/FS,c=Math.cos(w),a=Math.sin(w)/1.414;const a0=1+a;
+  const FS=30,SIMHR=+new URLSearchParams(location.search).get('pulsesim')||0;
+  const CFG={
+    finger:{win:12,min:6,cut:.6,harm:[[3,.3],[2,.3]],snr:.45,pkT:.35,nEst:3,fmax:200,minPk:4,thr:.25,
+      help:'Cover the camera with your fingertip and press lightly. On a laptop, shine a phone flashlight through the finger from the nail side. Sit still for 15–20 s.',
+      src:'camera PPG · fingertip',how:'from a fingertip on the camera'},
+    face:{win:15,min:10,cut:1,harm:[[2,.45]],snr:.4,pkT:.3,nEst:4,fmax:180,minPk:5,thr:.3,
+      help:'Put your face inside the oval. Light should fall on your face from the front. Sit still, don\'t talk or smile, and wait 15–20 s.',
+      src:'contactless · face camera',how:'contactless, from tiny colour changes in the face'}};
+  const OVAL={cx:.5,cy:.47,rx:.2,ry:.33};
+  const ROIS=[{x:.41,y:.2,w:.18,h:.09},{x:.34,y:.5,w:.1,h:.1},{x:.56,y:.5,w:.1,h:.1}];
+  const S={mode:'finger',srcMode:'finger',stream:null,track:null,running:false,samples:[],frameT:[],est:[],bpm:null,hrv:null,q:0,
+    finger:'—',light:'—',motionTxt:'—',exp:'—',lastA:0,lastBeat:0,added:false,lastT:0,prevGray:null,motion:0,startT:0,expLocked:false,gen:0};
+  const gF=$('#lsGrab').getContext('2d',{willReadFrequently:true}),gV=$('#lsGrabF').getContext('2d',{willReadFrequently:true});
+  const wctx=$('#lsWave').getContext('2d'),vctx=$('#lsView').getContext('2d');
+  function bq(type,f0){const w=2*Math.PI*f0/FS,c=Math.cos(w),a=Math.sin(w)/1.414,a0=1+a;
     const b=type==='lp'?[(1-c)/2,1-c,(1-c)/2]:[(1+c)/2,-(1+c),(1+c)/2];return [b[0]/a0,b[1]/a0,b[2]/a0,-2*c/a0,(1-a)/a0];}
-  const HP=bq('hp',.5),LP=bq('lp',4);
+  const FIL={finger:[bq('hp',.5),bq('lp',4)],face:[bq('hp',.6),bq('lp',3.3)]};
   function runF(x,[b0,b1,b2,a1,a2]){const y=new Array(x.length);let x1=x[0],x2=x[0],y1=0,y2=0;if(b0+b1+b2>.5)y1=y2=x[0];
     for(let i=0;i<x.length;i++){const v=b0*x[i]+b1*x1+b2*x2-a1*y1-a2*y2;x2=x1;x1=x[i];y2=y1;y1=v;y[i]=v;}return y;}
   const ff=(x,f)=>runF(runF(x,f).reverse(),f).reverse();
+  const std=a=>{const m=a.reduce((s,v)=>s+v,0)/a.length;return Math.sqrt(a.reduce((s,v)=>s+(v-m)**2,0)/a.length)||1e-9;};
+  function pos(R,G,B){const L=Math.round(1.6*FS),n=R.length,H=new Array(n).fill(0);
+    for(let s=0;s+L<=n;s++){let mr=0,mg=0,mb=0;for(let i=s;i<s+L;i++){mr+=R[i];mg+=G[i];mb+=B[i];}mr/=L;mg/=L;mb/=L;
+      const s1=[],s2=[];for(let i=s;i<s+L;i++){const r=R[i]/mr,g=G[i]/mg,b=B[i]/mb;s1.push(g-b);s2.push(-2*r+g+b);}
+      const a=std(s1)/std(s2),h=s1.map((v,k)=>v+a*s2[k]),hm=h.reduce((x,y)=>x+y,0)/L;for(let k=0;k<L;k++)H[s+k]+=h[k]-hm;}
+    return H;}
   function status(c,t){const s=$('#lsStatus');s.className='lsst '+c;s.textContent=t;}
   function chip(){const c=$('#lsChip');if(!S.running){c.className='chip';c.textContent='camera off';}
     else if(S.bpm){c.className='chip ok';c.textContent='LIVE · '+Math.round(S.bpm)+' bpm';}else{c.className='chip am';c.textContent='measuring';}}
@@ -833,109 +865,160 @@ const LS=(()=>{
     const sel=$('#lsCam'),cur=S.track&&S.track.getSettings().deviceId;sel.innerHTML='';
     d.forEach((x,i)=>{const o=document.createElement('option');o.value=x.deviceId;o.textContent=x.label||('Camera '+(i+1));if(x.deviceId===cur)o.selected=true;sel.appendChild(o);});
     sel.hidden=d.length<2;}catch(e){}}
-  function reset(){S.samples=[];S.est=[];S.bpm=null;S.hrv=null;S.q=0;}
+  function reset(){S.samples=[];S.est=[];S.bpm=null;S.hrv=null;S.q=0;S.wave=null;S.pk=null;}
+  function setMode(m){
+    S.mode=m;$('#lsModeF').classList.toggle('on',m==='finger');$('#lsModeV').classList.toggle('on',m==='face');
+    const face=m==='face';$('#lsView').hidden=!face;['#lsLightRow','#lsMotionRow','#lsExpRow'].forEach(s=>$(s).hidden=!face);
+    $('#lsHrvRow').hidden=face;$('#lsSrcLab').textContent=face?'Face':'Finger';$('#lsHelp').textContent=CFG[m].help;
+    if(S.running)start();else{reset();S.finger='—';status('','Press Start and allow the camera.');paint();}
+  }
   async function start(deviceId){
-    stop(true);reset();
-    if(SIMHR){S.running=true;simLoop();status('','Simulated pulse (test mode)…');chip();return;}
+    stop(true);reset();S.prevGray=null;S.motion=0;S.expLocked=false;S.startT=performance.now()/1000;const gen=++S.gen;
+    if(SIMHR){S.running=true;simLoop(gen);status('','Simulated pulse (test mode)…');chip();return;}
     if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){status('bad','This browser cannot open the camera. Use Chrome or Edge.');return;}
-    try{const video=deviceId?{deviceId:{exact:deviceId}}:{facingMode:{ideal:'environment'}};
-      Object.assign(video,{width:{ideal:320},height:{ideal:240},frameRate:{ideal:30}});
+    const face=S.mode==='face';
+    try{const video=deviceId?{deviceId:{exact:deviceId}}:{facingMode:{ideal:face?'user':'environment'}};
+      Object.assign(video,face?{width:{ideal:640},height:{ideal:480},frameRate:{ideal:30}}:{width:{ideal:320},height:{ideal:240},frameRate:{ideal:30}});
       S.stream=await navigator.mediaDevices.getUserMedia({video,audio:false});}
     catch(e){status('bad','Camera blocked or not found ('+e.name+'). Allow camera access and try again.');return;}
+    if(gen!==S.gen){S.stream.getTracks().forEach(t=>t.stop());return;}
     S.track=S.stream.getVideoTracks()[0];const v=$('#lsVideo');v.srcObject=S.stream;await v.play();
-    S.running=true;listCams();torch(true);status('','Cover the camera with your fingertip…');chip();
-    if(v.requestVideoFrameCallback){const cb=now=>{if(!S.running)return;grab(now);v.requestVideoFrameCallback(cb);};v.requestVideoFrameCallback(cb);}
-    else{const loop=()=>{if(!S.running)return;if(v.currentTime!==S.lastT){S.lastT=v.currentTime;grab(performance.now());}requestAnimationFrame(loop);};loop();}
+    S.running=true;listCams();S.exp='auto';if(!face)torch(true);
+    status('',face?'Put your face inside the oval…':'Cover the camera with your fingertip…');chip();
+    if(v.requestVideoFrameCallback){const cb=now=>{if(!S.running||gen!==S.gen)return;grab(now);v.requestVideoFrameCallback(cb);};v.requestVideoFrameCallback(cb);}
+    else{const loop=()=>{if(!S.running||gen!==S.gen)return;if(v.currentTime!==S.lastT){S.lastT=v.currentTime;grab(performance.now());}requestAnimationFrame(loop);};loop();}
   }
-  function stop(silent){S.running=false;if(S.stream){S.stream.getTracks().forEach(t=>t.stop());S.stream=null;S.track=null;}
+  function stop(silent){S.running=false;S.gen++;if(S.stream){S.stream.getTracks().forEach(t=>t.stop());S.stream=null;S.track=null;}
     $('#lsTorch').hidden=true;if(!silent){reset();S.finger='—';status('','Camera stopped.');paint();}chip();renderGuest();}
   async function torch(on){try{const caps=S.track.getCapabilities?S.track.getCapabilities():{};if(!caps.torch)return;
     $('#lsTorch').hidden=false;await S.track.applyConstraints({advanced:[{torch:on}]});$('#lsTorch').dataset.on=on?'1':'0';}catch(e){}}
-  function grab(now){const v=$('#lsVideo');if(!v.videoWidth)return;gctx.drawImage(v,0,0,48,36);
-    const px=gctx.getImageData(0,0,48,36).data;let r=0,g=0,b=0,sat=0,n=0;
+  // face mode: auto-exposure fights the tiny colour changes, so lock it once the picture has settled (if allowed)
+  async function lockExposure(){if(S.expLocked||!S.track)return;S.expLocked=true;
+    try{const c=S.track.getCapabilities?S.track.getCapabilities():{},adv=[];
+      if(c.exposureMode&&c.exposureMode.includes('manual'))adv.push({exposureMode:'manual'});
+      if(c.whiteBalanceMode&&c.whiteBalanceMode.includes('manual'))adv.push({whiteBalanceMode:'manual'});
+      if(adv.length){await S.track.applyConstraints({advanced:adv});S.exp='locked';}else S.exp='auto (cannot lock)';}
+    catch(e){S.exp='auto (cannot lock)';}}
+  function frameRate(t){S.frameT.push(t);if(S.frameT.length>60)S.frameT.shift();}
+  function grab(now){const v=$('#lsVideo');if(!v.videoWidth)return;S.mode==='face'?grabFace(v,now):grabFinger(v,now);}
+  function grabFinger(v,now){gF.drawImage(v,0,0,48,36);const px=gF.getImageData(0,0,48,36).data;let r=0,g=0,b=0,sat=0,n=0;
     for(let y=6;y<30;y++)for(let x=8;x<40;x++){const i=(y*48+x)*4;r+=px[i];g+=px[i+1];b+=px[i+2];if(px[i]>=250)sat++;n++;}
-    add(now/1000,r/n,g/n,b/n,sat/n);}
-  function add(t,r,g,b,sat){
-    S.frameT.push(t);if(S.frameT.length>60)S.frameT.shift();
+    addFinger(now/1000,r/n,g/n,b/n,sat/n);}
+  function addFinger(t,r,g,b,sat){frameRate(t);
     const st=r<35?'dark':sat>.85?'bright':(r>g*1.5&&r>b*1.5)?'on':'off';
     S.finger={on:'detected',off:'not covering',dark:'too dark',bright:'too bright'}[st];
     if(st!=='on'){if(S.samples.length)reset();
       status(st==='dark'?'bad':'',{off:'Cover the camera lens fully with your fingertip.',dark:'Too dark: shine a flashlight through your finger from behind.',bright:'Too bright: move the light a little further away.'}[st]);
       paint();chip();renderGuest();return;}
-    S.samples.push([t,r]);while(S.samples.length&&t-S.samples[0][0]>WIN)S.samples.shift();
-    if(t-S.lastA>.25){S.lastA=t;analyse();}
-  }
+    push(t,[t,r,g,b]);}
+  function grabFace(v,now){const W=160,H=120;gV.drawImage(v,0,0,W,H);const px=gV.getImageData(0,0,W,H).data;let r=0,g=0,b=0,n=0;
+    for(const q of ROIS){let rr=0,g2=0,bb=0,m=0;
+      for(let y=Math.round(q.y*H);y<Math.round((q.y+q.h)*H);y++)for(let x=Math.round(q.x*W);x<Math.round((q.x+q.w)*W);x++){const i=(y*W+x)*4;rr+=px[i];g2+=px[i+1];bb+=px[i+2];m++;}
+      rr/=m;g2/=m;bb/=m;if(rr>g2*1.03&&g2>bb*.85&&rr>45){r+=rr;g+=g2;b+=bb;n++;}}
+    const gray=[];for(let y=Math.round((OVAL.cy-OVAL.ry)*H);y<Math.round((OVAL.cy+OVAL.ry)*H);y+=4)for(let x=Math.round((OVAL.cx-OVAL.rx)*W);x<Math.round((OVAL.cx+OVAL.rx)*W);x+=4){const i=(y*W+x)*4;gray.push(px[i]*.3+px[i+1]*.59+px[i+2]*.11);}
+    let mo=0;if(S.prevGray&&S.prevGray.length===gray.length){for(let i=0;i<gray.length;i++)mo+=Math.abs(gray[i]-S.prevGray[i]);mo/=gray.length;}S.prevGray=gray;
+    S.motion=S.motion*.8+mo*.2;drawView(v,n);
+    addFace(now/1000,n?r/n:0,n?g/n:0,n?b/n:0,n,n?(r+g+b)/(3*n):0,S.motion);}
+  function addFace(t,r,g,b,okR,lum,motion){frameRate(t);
+    S.finger=okR>=2?'in position':'not found';S.light=!okR?'—':lum<60?'too dark':lum>225?'too bright':'ok';
+    S.motionTxt=motion<2?'still':motion<5?'slight':'moving';
+    if(!SIMHR&&t-S.startT>2.5)lockExposure();
+    let p=null;
+    if(okR<2)p=['','Put your face inside the oval (forehead and cheeks visible).'];
+    else if(lum<60)p=['bad','Too dark: turn your face towards a lamp or window.'];
+    else if(lum>225)p=['','Too bright: move away from the light a little.'];
+    else if(motion>6)p=['','Moving too much: sit still, don\'t talk.'];
+    if(p){if(S.samples.length)reset();status(...p);paint();chip();renderGuest();return;}
+    push(t,[t,r,g,b]);}
+  function push(t,s){const c=CFG[S.mode];S.samples.push(s);while(S.samples.length&&t-S.samples[0][0]>c.win)S.samples.shift();
+    if(t-S.lastA>.25){S.lastA=t;analyse();}}
   function analyse(){
-    const sm=S.samples,t0=sm[0][0],t1=sm.at(-1)[0],dur=t1-t0;
-    if(dur<MIN_SEC){status('',`Finger detected. Hold still… ${Math.ceil(MIN_SEC-dur)} s`);S.q=dur/MIN_SEC*.4;paint();chip();return;}
-    const n=Math.floor(dur*FS),x=new Array(n);let j=0;
-    for(let i=0;i<n;i++){const t=t0+i/FS;while(j<sm.length-2&&sm[j+1][0]<t)j++;const [ta,ra]=sm[j],[tb,rb]=sm[j+1]||sm[j];x[i]=tb>ta?ra+(rb-ra)*(t-ta)/(tb-ta):ra;}
-    const mean=x.reduce((a,b)=>a+b,0)/n;let y=ff(ff(x.map(v=>mean-v),HP),LP);
-    const cut=Math.round(FS*.6);y=y.slice(cut,y.length-cut);
-    const sd=Math.sqrt(y.reduce((a,b)=>a+b*b,0)/y.length)||1;y=y.map(v=>v/sd);
+    const c=CFG[S.mode],face=S.mode==='face',sm=S.samples,t0=sm[0][0],t1=sm.at(-1)[0],dur=t1-t0;
+    if(dur<c.min){status('',`${face?'Face found':'Finger detected'}. Hold still… ${Math.ceil(c.min-dur)} s`);S.q=dur/c.min*.4;paint();chip();return;}
+    const n=Math.floor(dur*FS),R=[],G=[],B=[];let j=0;
+    for(let i=0;i<n;i++){const t=t0+i/FS;while(j<sm.length-2&&sm[j+1][0]<t)j++;const a=sm[j],d=sm[j+1]||sm[j],f=d[0]>a[0]?(t-a[0])/(d[0]-a[0]):0;
+      R.push(a[1]+(d[1]-a[1])*f);if(face){G.push(a[2]+(d[2]-a[2])*f);B.push(a[3]+(d[3]-a[3])*f);}}
+    // fingertip: more blood = less light, so invert red; face: POS combination of RGB
+    let raw;if(face)raw=pos(R,G,B);else{const m=R.reduce((x,y)=>x+y,0)/n;raw=R.map(v=>m-v);}
+    let y=ff(ff(raw,FIL[S.mode][0]),FIL[S.mode][1]);const cut=Math.round(FS*c.cut);y=y.slice(cut,y.length-cut);
+    const sd=std(y);y=y.map(v=>v/sd);
     const pw=[];let best=0,bi=0,tot=0;
-    for(let bpm=40;bpm<=200;bpm++){const w=2*Math.PI*bpm/60/FS;let re=0,im=0;for(let i=0;i<y.length;i++){re+=y[i]*Math.cos(w*i);im+=y[i]*Math.sin(w*i);}
+    for(let bpm=40;bpm<=c.fmax;bpm++){const w=2*Math.PI*bpm/60/FS;let re=0,im=0;for(let i=0;i<y.length;i++){re+=y[i]*Math.cos(w*i);im+=y[i]*Math.sin(w*i);}
       const p=re*re+im*im;pw.push(p);tot+=p;if(p>best){best=p;bi=pw.length-1;}}
-    const band=c=>{let s=0;for(let k=Math.max(0,c-4);k<=Math.min(pw.length-1,c+4);k++)s+=pw[k];return s;};
-    for(const k of [3,2]){const b=Math.round((40+bi)/k);if(b<40)continue;let m=-1,mi=-1;
-      for(let q=Math.max(40,b-3);q<=b+3;q++)if(pw[q-40]>m){m=pw[q-40];mi=q-40;}if(m>=.3*best){bi=mi;break;}}
+    // harmonic check: if 1/3 or 1/2 of the peak rate also carries real power, the lower rate is the heart rate
+    for(const [k,th] of c.harm){const b=Math.round((40+bi)/k);if(b<40)continue;let m=-1,mi=-1;
+      for(let q=Math.max(40,b-3);q<=b+3;q++)if(pw[q-40]>m){m=pw[q-40];mi=q-40;}if(m>=th*best){bi=mi;break;}}
+    const band=k0=>{let s=0;for(let k=Math.max(0,k0-4);k<=Math.min(pw.length-1,k0+4);k++)s+=pw[k];return s;};
     const hi=2*bi+40,sig=band(bi)+(hi<pw.length?band(hi):0),snr=sig/Math.max(1e-9,tot-sig);
-    let fb=bi;if(bi>0&&bi<pw.length-1){const a=pw[bi-1],b=pw[bi],c=pw[bi+1];fb=bi+.5*(a-c)/(a-2*b+c||1);}
+    let fb=bi;if(bi>0&&bi<pw.length-1){const a=pw[bi-1],b=pw[bi],d=pw[bi+1];fb=bi+.5*(a-d)/(a-2*b+d||1);}
     const spec=40+fb,minGap=Math.round(FS*Math.max(60/220,.6*60/spec)),pk=[];
-    for(let i=1;i<y.length-1;i++)if(y[i]>.35&&y[i]>=y[i-1]&&y[i]>y[i+1]){if(pk.length&&i-pk.at(-1)<minGap){if(y[i]>y[pk.at(-1)])pk[pk.length-1]=i;}else pk.push(i);}
+    for(let i=1;i<y.length-1;i++)if(y[i]>c.pkT&&y[i]>=y[i-1]&&y[i]>y[i+1]){if(pk.length&&i-pk.at(-1)<minGap){if(y[i]>y[pk.at(-1)])pk[pk.length-1]=i;}else pk.push(i);}
+    // sub-frame peak position so beat-to-beat intervals are finer than 33 ms
+    const ps=pk.map(i=>{const a=y[i-1],b=y[i],d=y[i+1],e=a-2*b+d;return i+(e?.5*(a-d)/e:0);});
     let pkb=null,rmssd=null;
-    // sub-frame peak position (parabola through 3 samples) so beat-to-beat intervals are finer than 33 ms
-    const pos=pk.map(i=>{const a=y[i-1],b=y[i],c=y[i+1],d=a-2*b+c;return i+(d?.5*(a-c)/d:0);});
-    if(pk.length>=4){const iv=[];for(let i=1;i<pos.length;i++)iv.push((pos[i]-pos[i-1])/FS);
+    if(pk.length>=c.minPk){const iv=[];for(let i=1;i<ps.length;i++)iv.push((ps[i]-ps[i-1])/FS);
       const s=[...iv].sort((a,b)=>a-b);pkb=60/s[Math.floor(s.length/2)];
-      const ok=iv.filter(v=>v>.27&&v<1.6);if(ok.length>=4){let d=0;for(let i=1;i<ok.length;i++)d+=((ok[i]-ok[i-1])*1000)**2;rmssd=Math.sqrt(d/(ok.length-1));}}
-    const agree=pkb&&Math.abs(pkb-spec)<10;S.q=Math.max(0,Math.min(1,(snr-.3)/1.2))*(agree?1:.5);
-    S.wave=y;S.pk=pk;
-    if(pk.length){const tp=t0+(pk.at(-1)+cut)/FS;if(t1-tp<.45&&tp-S.lastBeat>.3){S.lastBeat=tp;const h=$('#lsHeart');h.classList.add('beat');setTimeout(()=>h.classList.remove('beat'),120);}}
-    if(snr>.45&&agree){S.est.push(spec);if(S.est.length>6)S.est.shift();if(rmssd)S.hrv=S.hrv==null?rmssd:S.hrv*.7+rmssd*.3;}
-    else{if(S.est.length)S.est.shift();status('','Signal noisy: keep your finger still and press lightly.');}
-    if(S.est.length>=3){const s=[...S.est].sort((a,b)=>a-b),med=s[Math.floor(s.length/2)];
+      if(!face){const ok=iv.filter(v=>v>.27&&v<1.6);if(ok.length>=4){let d=0;for(let i=1;i<ok.length;i++)d+=((ok[i]-ok[i-1])*1000)**2;rmssd=Math.sqrt(d/(ok.length-1));}}}
+    const agree=pkb&&Math.abs(pkb-spec)<10,good=snr>c.snr&&agree;
+    S.q=Math.max(0,Math.min(1,(snr-c.thr)/1.2))*(agree?1:.5);S.wave=y;S.pk=pk;
+    if(pk.length){const tp=t0+(pk.at(-1)+cut)/FS;if(t1-tp<.5&&tp-S.lastBeat>.3){S.lastBeat=tp;const h=$('#lsHeart');h.classList.add('beat');setTimeout(()=>h.classList.remove('beat'),120);}}
+    if(good){S.est.push(spec);if(S.est.length>8)S.est.shift();if(rmssd)S.hrv=S.hrv==null?rmssd:S.hrv*.7+rmssd*.3;}
+    else{if(S.est.length)S.est.shift();status('',face?'Signal weak or noisy: sit still, keep the light steady.':'Signal noisy: keep your finger still and press lightly.');}
+    if(S.est.length>=c.nEst){const s=[...S.est].sort((a,b)=>a-b),med=s[Math.floor(s.length/2)];
       if(s.at(-1)-s[0]<8){S.bpm=med;status('ok',S.added?'Live. The guest card updates in real time.':'Stable reading. Press “Add to crew”.');}}
-    else if(snr>.45&&agree)status('','Reading… hold still.');
+    else if(good)status('','Reading… hold still.');
     paint();chip();renderGuest();
   }
+  function ready(){return S.mode==='face'?S.finger==='in position':S.finger==='detected';}
   function paint(){
-    const b=$('#lsBpm');if(S.bpm&&S.finger==='detected'){b.className='lsbpm';b.innerHTML=Math.round(S.bpm)+'<small>bpm</small>';}else{b.className='lsbpm wait';b.innerHTML='--<small>bpm</small>';}
+    const b=$('#lsBpm');if(S.bpm&&ready()){b.className='lsbpm';b.innerHTML=Math.round(S.bpm)+'<small>bpm</small>';}else{b.className='lsbpm wait';b.innerHTML='--<small>bpm</small>';}
     const q=$('#lsQ');q.style.width=Math.round(S.q*100)+'%';q.style.background=S.q>.65?'var(--gr)':S.q>.35?'var(--am)':'var(--rd)';
     $('#lsFinger').textContent=S.finger;$('#lsHrv').textContent=S.hrv?Math.round(S.hrv)+' ms':'—';
+    $('#lsLight').textContent=S.light;$('#lsMotion').textContent=S.motionTxt;$('#lsExp').textContent=S.exp;
     if(S.frameT.length>10)$('#lsFps').textContent=((S.frameT.length-1)/(S.frameT.at(-1)-S.frameT[0])).toFixed(0)+' fps';
-    $('#lsAdd').disabled=!(S.bpm&&S.finger==='detected')||S.added;$('#lsAdd').textContent=S.added?'Added to crew ✓':'Add to crew';
+    $('#lsAdd').disabled=!(S.bpm&&ready())||S.added;$('#lsAdd').textContent=S.added?'Added to crew ✓':'Add to crew';
     if($('#lsModal').hidden)return;
-    const c=$('#lsWave'),W=c.width,H=c.height;wctx.clearRect(0,0,W,H);
+    const cv=$('#lsWave'),W=cv.width,H=cv.height;wctx.clearRect(0,0,W,H);
     wctx.strokeStyle='#0f2a22';wctx.lineWidth=1;for(let x=0;x<W;x+=W/12){wctx.beginPath();wctx.moveTo(x,0);wctx.lineTo(x,H);wctx.stroke();}
-    const y=S.finger==='detected'?S.wave:null;if(!y||!y.length)return;
+    const y=ready()?S.wave:null;if(!y||!y.length)return;
     const n=Math.min(y.length,FS*6),off=y.length-n,sx=W/(n-1),sy=H/7;
     wctx.strokeStyle='#3ddc97';wctx.lineWidth=3;wctx.shadowColor='rgba(61,220,151,.6)';wctx.shadowBlur=8;wctx.beginPath();
     for(let i=0;i<n;i++){const X=i*sx,Y=H/2-y[off+i]*sy;i?wctx.lineTo(X,Y):wctx.moveTo(X,Y);}wctx.stroke();wctx.shadowBlur=0;
     wctx.fillStyle='#ff5470';(S.pk||[]).forEach(p=>{if(p<off)return;wctx.beginPath();wctx.arc((p-off)*sx,H/2-y[p]*sy,6,0,7);wctx.fill();});
   }
+  function drawView(v,okR){if($('#lsModal').hidden||$('#lsView').hidden)return;const W=480,H=360;
+    vctx.save();vctx.translate(W,0);vctx.scale(-1,1);if(v)vctx.drawImage(v,0,0,W,H);else{vctx.fillStyle='#111';vctx.fillRect(0,0,W,H);}vctx.restore();
+    vctx.fillStyle='rgba(0,0,0,.45)';vctx.beginPath();vctx.rect(0,0,W,H);vctx.ellipse(OVAL.cx*W,OVAL.cy*H,OVAL.rx*W,OVAL.ry*H,0,0,Math.PI*2,true);vctx.fill('evenodd');
+    vctx.lineWidth=3;vctx.strokeStyle=okR>=2?'#3ddc97':'#ffb547';vctx.beginPath();vctx.ellipse(OVAL.cx*W,OVAL.cy*H,OVAL.rx*W,OVAL.ry*H,0,0,Math.PI*2);vctx.stroke();
+    vctx.lineWidth=2;vctx.strokeStyle='rgba(79,209,255,.85)';ROIS.forEach(q=>vctx.strokeRect(q.x*W,q.y*H,q.w*W,q.h*H));}
   function comment(b){return b<50?'below the typical resting range (athletes can be this low)':b<=100?'within the normal resting range':'elevated: excitement on stage is a normal reason';}
   function renderGuest(){
     const el=$('#guest');if(!S.added){el.innerHTML='';return;}
-    const live=S.running&&S.finger==='detected'&&S.bpm;
+    const live=S.running&&ready()&&S.bpm,face=S.mode==='face';
     const chipC=!S.running?'':live?(S.bpm>100||S.bpm<50?'am':'ok'):'am';
     const chipT=!S.running?'SENSOR OFF':live?(S.bpm>100?'ELEVATED':S.bpm<50?'LOW':'LIVE'):'NO SIGNAL';
     const na=l=>`<div class="vt"><span>${l}</span><b class="na">—<small>not measured</small></b></div>`;
     el.innerHTML=`<div class="cc guest" id="guestCard" title="Open the live sensor">
-      <div class="cch"><div class="av" style="background:#ff8fb1">G</div><div class="cn"><b>Guest (live)</b><span>Real person · camera PPG sensor</span></div><span class="chip ${chipC}">${chipT}</span></div>
-      <div class="vg">${vt('HR',live?Math.round(S.bpm):'—','bpm',live&&(S.bpm>100||S.bpm<50))}${vt('HRV ≈',live&&S.hrv?Math.round(S.hrv):'—','ms',false)}${vt('Signal',live?Math.round(S.q*100):'—','%',false)}${na('SpO₂')}${na('Temp')}${na('Resp')}</div>
-      <div class="gnote">${live?`Guardian: heart rate <b>${Math.round(S.bpm)} bpm</b> is ${comment(S.bpm)}.`:'Guardian: waiting for a stable signal. Fingertip on the camera, hold still.'}</div></div>`;
+      <div class="cch"><div class="av" style="background:#ff8fb1">G</div><div class="cn"><b>Guest (live)</b><span>Real person · ${CFG[S.mode].src}</span></div><span class="chip ${chipC}">${chipT}</span></div>
+      <div class="vg">${vt('HR',live?Math.round(S.bpm):'—','bpm',live&&(S.bpm>100||S.bpm<50))}${face?na('HRV'):vt('HRV ≈',live&&S.hrv?Math.round(S.hrv):'—','ms',false)}${vt('Signal',live?Math.round(S.q*100):'—','%',false)}${na('SpO₂')}${na('Temp')}${na('Resp')}</div>
+      <div class="gnote">${live?`Guardian: heart rate <b>${Math.round(S.bpm)} bpm</b> is ${comment(S.bpm)}.`:(face?'Guardian: waiting for a stable signal. Face in the oval, hold still.':'Guardian: waiting for a stable signal. Fingertip on the camera, hold still.')}</div></div>`;
     $('#crewChip').textContent='4 crew + 1 live guest';
   }
-  function addToCrew(){if(!S.bpm)return;S.added=true;const b=Math.round(S.bpm);
-    addLog('info','Live sensor connected — Guest',`Real heart rate measured from the camera: ${b} bpm${S.hrv?`, HRV ${Math.round(S.hrv)} ms`:''}. Guardian: ${comment(b)}. This is a real person, not simulated data.`);
+  function addToCrew(){if(!S.bpm)return;S.added=true;S.srcMode=S.mode;const b=Math.round(S.bpm);
+    addLog('info','Live sensor connected — Guest',`Real heart rate measured ${CFG[S.mode].how}: ${b} bpm${S.hrv&&S.mode==='finger'?`, HRV ${Math.round(S.hrv)} ms`:''}. Guardian: ${comment(b)}. This is a real person, not simulated data.`);
     speak(`Guest connected. Heart rate ${b} beats per minute.`);toast('Guest added to the crew panel with live heart rate');
     paint();renderGuest();$('#lsModal').hidden=true;}
-  function simLoop(){const t0=performance.now()/1000;let k=0;
-    const tick=()=>{if(!S.running)return;const t=performance.now()/1000;
-      while(k/FS<t-t0){const ts=t0+k/FS,ph=(ts*SIMHR/60)%1,p=Math.exp(-((ph-.15)**2)/.004)+.35*Math.exp(-((ph-.45)**2)/.006);
-        add(ts,170-2.2*p+3*Math.sin(ts*.4)+(Math.random()-.5)*.9,60,50,0);k++;}setTimeout(tick,33);};tick();}
+  function simLoop(gen){const t0=performance.now()/1000;let k=0;
+    const tick=()=>{if(!S.running||gen!==S.gen)return;const t=performance.now()/1000;
+      while(k/FS<t-t0){const ts=t0+k/FS,ph=(ts*SIMHR/60)%1;
+        if(S.mode==='face'){const p=Math.exp(-((ph-.2)**2)/.01)+.3*Math.exp(-((ph-.5)**2)/.012),l=1+.03*Math.sin(ts*.7)+.015*Math.sin(ts*2.3),nz=()=>(Math.random()-.5)*.5;
+          addFace(ts,180*l-.25*p+nz(),120*l-.55*p+nz(),95*l-.35*p+nz(),3,130,1);}
+        else{const p=Math.exp(-((ph-.15)**2)/.004)+.35*Math.exp(-((ph-.45)**2)/.006);addFinger(ts,170-2.2*p+3*Math.sin(ts*.4)+(Math.random()-.5)*.9,60,50,0);}
+        k++;}
+      if(S.mode==='face')drawView(null,3);setTimeout(tick,33);};tick();}
   $('#sGuest').onclick=()=>{$('#lsModal').hidden=false;paint();if(!S.running)start();};
+  $('#lsModeF').onclick=()=>{if(S.mode!=='finger')setMode('finger');};
+  $('#lsModeV').onclick=()=>{if(S.mode!=='face')setMode('face');};
   $('#lsStart').onclick=()=>start($('#lsCam').value||undefined);
   $('#lsStop').onclick=()=>stop(false);
   $('#lsCam').onchange=()=>start($('#lsCam').value);
@@ -945,6 +1028,7 @@ const LS=(()=>{
   $('#lsModal').addEventListener('click',e=>{if(e.target.id==='lsModal')$('#lsModal').hidden=true;});
   document.addEventListener('keydown',e=>{if(e.key==='Escape')$('#lsModal').hidden=true;});
   $('#guest').addEventListener('click',()=>{$('#lsModal').hidden=false;paint();});
+  $('#lsHelp').textContent=CFG.finger.help;
   return S;
 })();
 </script>

@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Solar Guardian — Contactless pulse test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#060a13;--panel:#0c1322;--panel2:#111b30;--line:#1b2742;--txt:#e2eaf8;--mut:#7d8db0;--cy:#4fd1ff;--am:#ffb547;--rd:#ff5470;--gr:#3ddc97}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:radial-gradient(900px 500px at 0% -10%,#22123a 0%,transparent 60%),var(--bg);color:var(--txt);font-family:'Space Grotesk',system-ui,sans-serif;min-height:100vh}
+.wrap{max-width:980px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-left)) 40px}
+h1{font-size:20px;letter-spacing:.5px;margin:0 0 4px}
+.sub{color:var(--mut);font-size:13px;margin-bottom:18px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+.grid{display:grid;grid-template-columns:1.25fr 1fr;gap:14px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+#view{width:100%;aspect-ratio:4/3;display:block;background:#000;border-radius:10px}
+.bpm{font-family:'JetBrains Mono',monospace;font-size:64px;font-weight:600;line-height:1;color:var(--gr);display:flex;align-items:baseline;gap:8px}
+.bpm small{font-size:15px;color:var(--mut)}
+.bpm.wait{color:var(--mut)}
+.heart{font-size:30px;color:var(--rd);transition:transform .08s;display:inline-block}
+.heart.beat{transform:scale(1.35)}
+.status{margin-top:8px;font-size:14px;min-height:38px}
+.status.ok{color:var(--gr)}.status.warn{color:var(--am)}.status.bad{color:var(--rd)}
+.qbar{height:8px;border-radius:5px;background:var(--panel2);overflow:hidden;margin-top:6px}
+.qbar i{display:block;height:100%;width:0;background:var(--am);transition:width .2s}
+.lab{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mut);margin-top:14px}
+#wave{width:100%;height:130px;display:block;background:#050c0a;border:1px solid #12352a;border-radius:10px;margin-top:6px}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center}
+button,select{font:inherit;font-size:14px;color:var(--txt);background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px 14px;cursor:pointer}
+button.pri{background:#0f2c24;border-color:#1f6b52;color:var(--gr)}
+button:focus-visible,select:focus-visible{outline:2px solid var(--cy);outline-offset:2px}
+.kv{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--mut);margin-top:6px}
+.kv b{color:var(--txt);font-weight:600}
+ol{margin:6px 0 0;padding-left:20px;color:var(--mut);font-size:13.5px;line-height:1.6}
+.mono{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--mut)}
+video{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>SOLAR GUARDIAN · Contactless pulse test</h1>
+  <div class="sub">Remote photoplethysmography (rPPG): heart rate from tiny colour changes in the skin of your face. Video never leaves this device. Not a medical device.</div>
+  <div class="grid">
+    <div class="panel">
+      <canvas id="view" width="640" height="480"></canvas>
+      <div class="row">
+        <button class="pri" id="bStart">Start</button>
+        <button id="bStop">Stop</button>
+        <select id="cam" aria-label="Camera" hidden></select>
+      </div>
+      <div class="lab">How to measure</div>
+      <ol>
+        <li>Put your face inside the oval. Light should fall on your face from the front (a window or lamp behind the laptop).</li>
+        <li>Sit still, don't talk or smile, breathe normally.</li>
+        <li>Wait 15–20 seconds.</li>
+      </ol>
+      <div class="mono" id="mode" style="margin-top:8px"></div>
+    </div>
+    <div class="panel">
+      <div class="bpm wait" id="bpm">--<small>bpm</small></div>
+      <div style="margin-top:6px"><span class="heart" id="heart">♥</span></div>
+      <div class="status warn" id="status">Press Start and allow the camera.</div>
+      <div class="lab">Signal quality</div>
+      <div class="qbar"><i id="qbar"></i></div>
+      <div class="kv"><span>Face</span><b id="kFace">—</b></div>
+      <div class="kv"><span>Light</span><b id="kLight">—</b></div>
+      <div class="kv"><span>Motion</span><b id="kMotion">—</b></div>
+      <div class="kv"><span>Exposure</span><b id="kExp">—</b></div>
+      <div class="kv"><span>Frame rate</span><b id="kFps">—</b></div>
+      <div class="kv"><span>Beat-to-beat</span><b id="kPk">—</b></div>
+      <div class="lab">Pulse signal · last 8 s</div>
+      <canvas id="wave" width="900" height="260"></canvas>
+    </div>
+  </div>
+</div>
+<video id="v" playsinline muted></video>
+<canvas id="grab" width="160" height="120" hidden></canvas>
+
+<script>
+const $=s=>document.querySelector(s);
+const FS=30, WIN=15, MIN_SEC=10, POS_L=Math.round(1.6*FS);
+const params=new URLSearchParams(location.search), SIM=params.has('sim'), SIM_HR=+params.get('hr')||72;
+// regions in normalised frame coordinates (the view is mirrored, regions are symmetric)
+const OVAL={cx:.5,cy:.47,rx:.2,ry:.33};
+const ROIS=[{x:.41,y:.2,w:.18,h:.09,n:'forehead'},{x:.34,y:.5,w:.1,h:.1,n:'cheek'},{x:.56,y:.5,w:.1,h:.1,n:'cheek'}];
+let stream=null,track=null,running=false,samples=[],frameT=[],est=[],shown=null,lastA=0,lastBeat=0,prevGray=null,motionAvg=0,lastT=0,startT=0,expLocked=false;
+const g=$('#grab').getContext('2d',{willReadFrequently:true}),view=$('#view').getContext('2d'),wctx=$('#wave').getContext('2d');
+
+/* ---------- camera ---------- */
+async function listCams(){try{const d=(await navigator.mediaDevices.enumerateDevices()).filter(x=>x.kind==='videoinput');
+  const sel=$('#cam'),cur=track&&track.getSettings().deviceId;sel.innerHTML='';
+  d.forEach((x,i)=>{const o=document.createElement('option');o.value=x.deviceId;o.textContent=x.label||('Camera '+(i+1));if(x.deviceId===cur)o.selected=true;sel.appendChild(o);});
+  sel.hidden=d.length<2;}catch(e){}}
+async function start(deviceId){
+  stop();reset();
+  if(SIM){running=true;startT=performance.now()/1000;simLoop();setStatus('warn','Simulated face signal running…');return;}
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){setStatus('bad','This browser cannot open the camera. Use Chrome or Edge.');return;}
+  try{const video=deviceId?{deviceId:{exact:deviceId}}:{facingMode:{ideal:'user'}};
+    Object.assign(video,{width:{ideal:640},height:{ideal:480},frameRate:{ideal:30}});
+    stream=await navigator.mediaDevices.getUserMedia({video,audio:false});}
+  catch(e){setStatus('bad','Camera blocked or not found ('+e.name+'). Allow camera access and try again.');return;}
+  track=stream.getVideoTracks()[0];const v=$('#v');v.srcObject=stream;await v.play();
+  running=true;startT=performance.now()/1000;expLocked=false;listCams();$('#kExp').textContent='auto';
+  setStatus('warn','Put your face inside the oval…');
+  if(v.requestVideoFrameCallback){const cb=now=>{if(!running)return;grab(now);v.requestVideoFrameCallback(cb);};v.requestVideoFrameCallback(cb);}
+  else{const loop=()=>{if(!running)return;if(v.currentTime!==lastT){lastT=v.currentTime;grab(performance.now());}requestAnimationFrame(loop);};loop();}
+}
+function stop(){running=false;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;track=null;}}
+function reset(){samples=[];est=[];shown=null;prevGray=null;motionAvg=0;showBpm(null);setQ(0);}
+// auto-exposure fights the tiny colour changes: lock it once the picture has settled (if the camera allows)
+async function lockExposure(){
+  if(expLocked||!track)return;expLocked=true;
+  try{const c=track.getCapabilities?track.getCapabilities():{},adv=[];
+    if(c.exposureMode&&c.exposureMode.includes('manual'))adv.push({exposureMode:'manual'});
+    if(c.whiteBalanceMode&&c.whiteBalanceMode.includes('manual'))adv.push({whiteBalanceMode:'manual'});
+    if(adv.length){await track.applyConstraints({advanced:adv});$('#kExp').textContent='locked';}else $('#kExp').textContent='auto (cannot lock)';}
+  catch(e){$('#kExp').textContent='auto (cannot lock)';}
+}
+
+/* ---------- per frame: mean RGB of forehead + cheeks, motion ---------- */
+function grab(now){
+  const v=$('#v');if(!v.videoWidth)return;const W=160,H=120;
+  g.drawImage(v,0,0,W,H);const px=g.getImageData(0,0,W,H).data;
+  let r=0,gg=0,b=0,n=0,okR=0;
+  for(const q of ROIS){let rr=0,g2=0,bb=0,m=0;
+    for(let y=Math.round(q.y*H);y<Math.round((q.y+q.h)*H);y++)for(let x=Math.round(q.x*W);x<Math.round((q.x+q.w)*W);x++){const i=(y*W+x)*4;rr+=px[i];g2+=px[i+1];bb+=px[i+2];m++;}
+    rr/=m;g2/=m;bb/=m;
+    if(rr>g2*1.03&&g2>bb*.85&&rr>45){r+=rr;gg+=g2;b+=bb;n++;okR++;}}
+  // motion: mean absolute change of a coarse grey image of the face oval
+  const gray=[];for(let y=Math.round((OVAL.cy-OVAL.ry)*H);y<Math.round((OVAL.cy+OVAL.ry)*H);y+=4)for(let x=Math.round((OVAL.cx-OVAL.rx)*W);x<Math.round((OVAL.cx+OVAL.rx)*W);x+=4){const i=(y*W+x)*4;gray.push(px[i]*.3+px[i+1]*.59+px[i+2]*.11);}
+  let mo=0;if(prevGray&&prevGray.length===gray.length){for(let i=0;i<gray.length;i++)mo+=Math.abs(gray[i]-prevGray[i]);mo/=gray.length;}prevGray=gray;
+  motionAvg=motionAvg*.8+mo*.2;
+  drawView(v,okR);
+  const lum=n?(r+gg+b)/(3*n):0;
+  addSample(now/1000,n?r/n:0,n?gg/n:0,n?b/n:0,okR,lum,motionAvg);
+}
+function addSample(t,r,g2,b,okR,lum,motion){
+  frameT.push(t);if(frameT.length>60)frameT.shift();
+  if(frameT.length>10)$('#kFps').textContent=((frameT.length-1)/(frameT.at(-1)-frameT[0])).toFixed(0)+' fps';
+  $('#kFace').textContent=okR>=2?'in position':'not found';
+  $('#kLight').textContent=!okR?'—':lum<60?'too dark':lum>225?'too bright':'ok';
+  $('#kMotion').textContent=motion<2?'still':motion<5?'slight':'moving';
+  if(t-startT>2.5)lockExposure();
+  let problem=null;
+  if(okR<2)problem=['warn','Put your face inside the oval (forehead and cheeks visible).'];
+  else if(lum<60)problem=['bad','Too dark: turn your face towards a lamp or window.'];
+  else if(lum>225)problem=['warn','Too bright: move away from the light a little.'];
+  else if(motion>6)problem=['warn','Moving too much: sit still, don\'t talk.'];
+  if(problem){if(samples.length)reset();setStatus(...problem);drawWave(null);return;}
+  samples.push([t,r,g2,b]);while(samples.length&&t-samples[0][0]>WIN)samples.shift();
+  if(t-lastA>.3){lastA=t;analyse();}
+}
+
+/* ---------- POS (plane-orthogonal-to-skin) + band-pass + spectrum ---------- */
+function bq(type,f0){const w=2*Math.PI*f0/FS,c=Math.cos(w),a=Math.sin(w)/1.414,a0=1+a;
+  const b=type==='lp'?[(1-c)/2,1-c,(1-c)/2]:[(1+c)/2,-(1+c),(1+c)/2];return [b[0]/a0,b[1]/a0,b[2]/a0,-2*c/a0,(1-a)/a0];}
+const HP=bq('hp',.6),LP=bq('lp',3.3);
+function runF(x,[b0,b1,b2,a1,a2]){const y=new Array(x.length);let x1=x[0],x2=x[0],y1=0,y2=0;if(b0+b1+b2>.5)y1=y2=x[0];
+  for(let i=0;i<x.length;i++){const v=b0*x[i]+b1*x1+b2*x2-a1*y1-a2*y2;x2=x1;x1=x[i];y2=y1;y1=v;y[i]=v;}return y;}
+const ff=(x,f)=>runF(runF(x,f).reverse(),f).reverse();
+const std=a=>{const m=a.reduce((s,v)=>s+v,0)/a.length;return Math.sqrt(a.reduce((s,v)=>s+(v-m)**2,0)/a.length)||1e-9;};
+function pos(R,G,B){
+  // Wang et al. 2017: project temporally normalised RGB onto a plane orthogonal to skin tone;
+  // removes brightness changes that hit all colours equally
+  const n=R.length,H=new Array(n).fill(0);
+  for(let s=0;s+POS_L<=n;s++){
+    let mr=0,mg=0,mb=0;for(let i=s;i<s+POS_L;i++){mr+=R[i];mg+=G[i];mb+=B[i];}mr/=POS_L;mg/=POS_L;mb/=POS_L;
+    const s1=[],s2=[];for(let i=s;i<s+POS_L;i++){const r=R[i]/mr,g2=G[i]/mg,b=B[i]/mb;s1.push(g2-b);s2.push(-2*r+g2+b);}
+    const a=std(s1)/std(s2),h=s1.map((v,k)=>v+a*s2[k]),hm=h.reduce((x,y)=>x+y,0)/POS_L;
+    for(let k=0;k<POS_L;k++)H[s+k]+=h[k]-hm;}
+  return H;
+}
+function analyse(){
+  const sm=samples,t0=sm[0][0],t1=sm.at(-1)[0],dur=t1-t0;
+  if(dur<MIN_SEC){setStatus('warn',`Face found. Hold still… ${Math.ceil(MIN_SEC-dur)} s`);setQ(dur/MIN_SEC*.4);drawWave(null);return;}
+  const n=Math.floor(dur*FS),R=[],G=[],B=[];let j=0;
+  for(let i=0;i<n;i++){const t=t0+i/FS;while(j<sm.length-2&&sm[j+1][0]<t)j++;const a=sm[j],c=sm[j+1]||sm[j],f=c[0]>a[0]?(t-a[0])/(c[0]-a[0]):0;
+    R.push(a[1]+(c[1]-a[1])*f);G.push(a[2]+(c[2]-a[2])*f);B.push(a[3]+(c[3]-a[3])*f);}
+  let y=ff(ff(pos(R,G,B),HP),LP);
+  const cut=Math.round(FS*1);y=y.slice(cut,y.length-cut);
+  const sd=std(y);y=y.map(v=>v/sd);
+  const pw=[];let best=0,bi=0,tot=0;
+  for(let bpm=40;bpm<=180;bpm++){const w=2*Math.PI*bpm/60/FS;let re=0,im=0;for(let i=0;i<y.length;i++){re+=y[i]*Math.cos(w*i);im+=y[i]*Math.sin(w*i);}
+    const p=re*re+im*im;pw.push(p);tot+=p;if(p>best){best=p;bi=pw.length-1;}}
+  for(const k of [2]){const b=Math.round((40+bi)/k);if(b<40)continue;let m=-1,mi=-1;for(let q=Math.max(40,b-3);q<=b+3;q++)if(pw[q-40]>m){m=pw[q-40];mi=q-40;}if(m>=.45*best){bi=mi;break;}}
+  const band=c=>{let s=0;for(let k=Math.max(0,c-3);k<=Math.min(pw.length-1,c+3);k++)s+=pw[k];return s;};
+  const hi=2*bi+40,sig=band(bi)+(hi<pw.length?band(hi):0),snr=sig/Math.max(1e-9,tot-sig);
+  let fb=bi;if(bi>0&&bi<pw.length-1){const a=pw[bi-1],b=pw[bi],c=pw[bi+1];fb=bi+.5*(a-c)/(a-2*b+c||1);}
+  const spec=40+fb,minGap=Math.round(FS*Math.max(60/200,.6*60/spec)),pk=[];
+  for(let i=1;i<y.length-1;i++)if(y[i]>.3&&y[i]>=y[i-1]&&y[i]>y[i+1]){if(pk.length&&i-pk.at(-1)<minGap){if(y[i]>y[pk.at(-1)])pk[pk.length-1]=i;}else pk.push(i);}
+  let pkb=null;if(pk.length>=5){const iv=[];for(let i=1;i<pk.length;i++)iv.push((pk[i]-pk[i-1])/FS);iv.sort((a,b)=>a-b);pkb=60/iv[Math.floor(iv.length/2)];}
+  $('#kPk').textContent=pkb?pkb.toFixed(0)+' bpm':'—';
+  const agree=pkb&&Math.abs(pkb-spec)<10,good=snr>.4&&agree;
+  setQ(Math.max(0,Math.min(1,(snr-.2)/1.1))*(agree?1:.5));drawWave(y,pk);
+  if(pk.length){const tp=t0+(pk.at(-1)+cut)/FS;if(t1-tp<.5&&tp-lastBeat>.3){lastBeat=tp;const h=$('#heart');h.classList.add('beat');setTimeout(()=>h.classList.remove('beat'),120);}}
+  if(good){est.push(spec);if(est.length>8)est.shift();}else{if(est.length)est.shift();setStatus('warn','Signal weak or noisy: sit still, keep the light steady.');}
+  if(est.length>=4){const s=[...est].sort((a,b)=>a-b),med=s[Math.floor(s.length/2)];
+    if(s.at(-1)-s[0]<8){shown=med;showBpm(med);setStatus('ok','Stable reading. Compare with your pulse at the wrist.');return;}}
+  if(shown==null)showBpm(null);
+  if(good)setStatus('warn','Reading… hold still.');
+}
+
+/* ---------- drawing ---------- */
+function drawView(v,okR){
+  const W=640,H=480;view.save();view.translate(W,0);view.scale(-1,1);if(v)view.drawImage(v,0,0,W,H);else{view.fillStyle='#111';view.fillRect(0,0,W,H);}view.restore();
+  view.fillStyle='rgba(0,0,0,.45)';view.beginPath();view.rect(0,0,W,H);view.ellipse(OVAL.cx*W,OVAL.cy*H,OVAL.rx*W,OVAL.ry*H,0,0,Math.PI*2,true);view.fill('evenodd');
+  view.lineWidth=3;view.strokeStyle=okR>=2?'#3ddc97':'#ffb547';view.beginPath();view.ellipse(OVAL.cx*W,OVAL.cy*H,OVAL.rx*W,OVAL.ry*H,0,0,Math.PI*2);view.stroke();
+  view.lineWidth=2;view.strokeStyle='rgba(79,209,255,.85)';ROIS.forEach(q=>view.strokeRect(q.x*W,q.y*H,q.w*W,q.h*H));
+}
+function setStatus(c,t){const s=$('#status');s.className='status '+c;s.textContent=t;}
+function setQ(q){const b=$('#qbar');b.style.width=Math.round(q*100)+'%';b.style.background=q>.65?'var(--gr)':q>.35?'var(--am)':'var(--rd)';}
+function showBpm(v){const b=$('#bpm');if(v==null){b.className='bpm wait';b.innerHTML='--<small>bpm</small>';}else{b.className='bpm';b.innerHTML=Math.round(v)+'<small>bpm</small>';}}
+function drawWave(y,pk){
+  const c=$('#wave'),W=c.width,H=c.height;wctx.clearRect(0,0,W,H);
+  wctx.strokeStyle='#0f2a22';wctx.lineWidth=1;for(let x=0;x<W;x+=W/16){wctx.beginPath();wctx.moveTo(x,0);wctx.lineTo(x,H);wctx.stroke();}
+  if(!y)return;const n=Math.min(y.length,FS*8),off=y.length-n,sx=W/(n-1),sy=H/7;
+  wctx.strokeStyle='#3ddc97';wctx.lineWidth=3;wctx.beginPath();for(let i=0;i<n;i++){const X=i*sx,Y=H/2-y[off+i]*sy;i?wctx.lineTo(X,Y):wctx.moveTo(X,Y);}wctx.stroke();
+  wctx.fillStyle='#ff5470';(pk||[]).forEach(p=>{if(p<off)return;wctx.beginPath();wctx.arc((p-off)*sx,H/2-y[p]*sy,5,0,7);wctx.fill();});
+}
+
+/* ---------- simulation (?sim=1&hr=72): weak skin pulse + strong brightness drift + noise ---------- */
+function simLoop(){
+  const t0=performance.now()/1000;let k=0;
+  const tick=()=>{if(!running)return;const t=performance.now()/1000;
+    while(k/FS<t-t0){const ts=t0+k/FS,ph=(ts*SIM_HR/60)%1,p=Math.exp(-((ph-.2)**2)/.01)+.3*Math.exp(-((ph-.5)**2)/.012);
+      const light=1+.03*Math.sin(ts*.7)+.015*Math.sin(ts*2.3),nz=()=>(Math.random()-.5)*.5;
+      // pulse changes colours by different small amounts (most in green), light changes all colours equally
+      addSample(ts,180*light-0.25*p+nz(),120*light-0.55*p+nz(),95*light-0.35*p+nz(),3,130,1);k++;}
+    drawView(null,3);setTimeout(tick,33);};tick();
+}
+
+$('#bStart').onclick=()=>start($('#cam').value||undefined);
+$('#bStop').onclick=()=>{stop();setStatus('warn','Stopped.');};
+$('#cam').onchange=()=>start($('#cam').value);
+$('#mode').textContent=SIM?`Simulation mode: synthetic face signal at ${SIM_HR} bpm with lighting drift (no camera).`:'';
+drawView(null,0);
+</script>
+</body>
+</html>
