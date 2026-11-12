@@ -129,7 +129,7 @@ Every heartbeat pushes a wave of blood into the skin. More blood absorbs more li
 
 ### Two modes
 
-| | ☝ **Fingertip** | 🙂 **Face · contactless (rPPG)** |
+| |  **Fingertip** |  **Face · contactless (rPPG)** |
 |---|---|---|
 | How | Fingertip covers the camera; light shines through the tissue (phone flashlight, or a light behind the finger on a laptop). | Camera looks at the face; forehead and both cheeks are measured. |
 | Signal | Mean **red** value of the fingertip. Strong signal. | Mean **red, green, blue** of the skin regions, combined with the **POS** algorithm (Wang et al., 2017), which cancels brightness changes that affect all colours equally. Weaker signal. |
