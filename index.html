@@ -169,6 +169,16 @@ main{display:grid;grid-template-columns:300px minmax(0,1fr) 370px;gap:14px;paddi
 .h3l.sun{color:#ffb547;font-size:11px}
 .h3l.wall{color:#6fa8ff;font-size:9px}
 .h3hint{position:absolute;left:10px;bottom:8px;font-size:10px;color:#56658a;pointer-events:none}
+.evcard{position:absolute;z-index:5;right:12px;top:12px;bottom:12px;width:min(420px,calc(100% - 24px));overflow:auto;background:rgba(8,13,26,.94);border:1px solid rgba(255,181,71,.5);border-radius:12px;padding:14px 16px;box-shadow:0 10px 40px rgba(0,0,0,.5);backdrop-filter:blur(4px)}
+.evcard[hidden]{display:none}
+.evtag{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:1px;color:var(--am);text-transform:uppercase}
+.evcard h4{margin:4px 0 8px;font-size:17px}
+.evcard ul{margin:0;padding-left:18px;font-size:12.5px;line-height:1.5;color:#c9d4ec}
+.evcard li{margin-bottom:5px}
+.evcard li b{color:var(--txt)}
+.evsrc{font-size:10.5px;color:var(--mut);margin-top:8px}
+.evsrc a{color:var(--cy)}
+.evbtn{display:flex;gap:8px;margin-top:10px}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -242,7 +252,19 @@ main{display:grid;grid-template-columns:300px minmax(0,1fr) 370px;gap:14px;paddi
   <div class="col c2">
     <section class="panel">
       <div class="ph"><h3>Deep-space habitat · live radiation map</h3><span class="mapctl"><span class="seg" id="viewSeg" hidden><button class="btn on" id="v3d">3D</button><button class="btn" id="v2d">2D</button></span><span class="chip cy" id="shipChip">GCR background only</span></span></div>
-      <div class="shipwrap"><svg id="ship" viewBox="0 0 900 300" preserveAspectRatio="xMidYMid meet"></svg><canvas id="pcl"></canvas><div id="hab3d"><div id="h3lab"></div><div class="h3hint">drag to rotate · scroll to zoom · click an astronaut · double-click to reset</div></div></div>
+      <div class="shipwrap"><svg id="ship" viewBox="0 0 900 300" preserveAspectRatio="xMidYMid meet"></svg><canvas id="pcl"></canvas><div class="evcard" id="evCard" hidden>
+        <div class="evtag">🛰 Real event · May 2024</div>
+        <h4>The “Gannon storm”</h4>
+        <ul>
+          <li>The strongest geomagnetic storm in over 20 years: <b>G5 (extreme)</b> on 10–11 May, the first G5 since the Halloween storms of October 2003.</li>
+          <li>Source: sunspot region <b>AR 13664</b>, with 12 X-class flares between 8 and 15 May and several Earth-directed CMEs.</li>
+          <li>Auroras were seen across Europe, much further south than usual.</li>
+          <li>Named in memory of space weather physicist <b>Dr Jennifer Gannon</b>, who died on 2 May 2024.</li>
+          <li>For astronauts the danger is the <b>proton storm</b>. <span id="evTiming"></span></li>
+        </ul>
+        <div class="evsrc">Sources: NASA DONKI · NOAA SWPC · NASA CCMC · Hayakawa et al., ApJ 2025 · <a id="evLink" href="#" target="_blank" rel="noopener">DONKI event ↗</a></div>
+        <div class="evbtn"><button class="btn on" id="evStart">▶ Start replay</button><button class="btn" id="evClose">Close</button></div>
+      </div><div id="hab3d"><div id="h3lab"></div><div class="h3hint">drag to rotate · scroll to zoom · click an astronaut · double-click to reset</div></div></div>
       <div class="legend">
         <span><i style="background:#ffb547"></i>Solar protons (SEP) — stopped by the water wall</span>
         <span><i style="background:#a78bfa"></i>Galactic cosmic rays — penetrate everything</span>
@@ -672,14 +694,25 @@ async function replayReal(){
     let cls='—';try{const f=await fetch(`https://api.nasa.gov/DONKI/FLR?startDate=2024-05-08&endDate=2024-05-12&api_key=${encodeURIComponent(key)}`);
       if(f.ok){const m=(await f.json()).find(x=>x.flrID===flrs[0]);if(m&&m.classType)cls=m.classType;}}catch(e){}
     const real={sepID:sep.sepID,link:sep.link,flareTxt:fmtUTC(flare),onsetTxt:fmtUTC(onset),window:win,cls};
-    if(!triggerSPE(real))return;
-    const l=$('#realLbl');l.hidden=false;
-    l.innerHTML=`Real event · NASA DONKI · flare ${real.flareTxt}${cls!=='—'?` (${cls})`:''} → protons ${real.onsetTxt} · warning window ${fmtDur(win)}. <a href="${sep.link}" target="_blank" rel="noopener">DONKI event ↗</a><br>Timing is real NASA data; proton intensity is modelled.`;
-    addLog('info','Replaying a real solar storm (NASA DONKI)',`${real.sepID}: flare ${real.flareTxt}, proton onset ${real.onsetTxt}. Real warning window ${fmtDur(win)}. Event timing from NASA DONKI; proton intensity modelled.`);
-    setSpeed(20);toast('Real May 2024 storm loaded from NASA DONKI');
+    showEventCard(real);
   }catch(e){
     toast('NASA DONKI not reachable — running the simulated storm instead');triggerSPE();
   }finally{btn.disabled=false;}
+}
+// background card for the real event (facts checked against NOAA SWPC, NASA CCMC and Hayakawa et al. 2025)
+function showEventCard(real){
+  const c=$('#evCard');
+  $('#evTiming').innerHTML=`Flare <b>${real.flareTxt}</b>${real.cls!=='—'?` (${real.cls})`:''} → protons <b>${real.onsetTxt}</b>: a real warning window of <b>${fmtDur(real.window)}</b>.`;
+  $('#evLink').href=real.link;c.hidden=false;
+  $('#evStart').onclick=()=>{c.hidden=true;startReal(real);};
+  $('#evClose').onclick=()=>{c.hidden=true;};
+}
+function startReal(real){
+  if(!triggerSPE(real))return;
+  const l=$('#realLbl');l.hidden=false;
+  l.innerHTML=`Real event · NASA DONKI · flare ${real.flareTxt}${real.cls!=='—'?` (${real.cls})`:''} → protons ${real.onsetTxt} · warning window ${fmtDur(real.window)}. <a href="${real.link}" target="_blank" rel="noopener">DONKI event ↗</a><br>Timing is real NASA data; proton intensity is modelled.`;
+  addLog('info','Replaying a real solar storm (NASA DONKI)',`${real.sepID}: flare ${real.flareTxt}, proton onset ${real.onsetTxt}. Real warning window ${fmtDur(real.window)}. Event timing from NASA DONKI; proton intensity modelled.`);
+  setSpeed(20);toast('Real May 2024 storm loaded from NASA DONKI');
 }
 
 /* ---------- ledger (hash chain) ---------- */
