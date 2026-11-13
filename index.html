@@ -714,11 +714,11 @@ function guardian(){
     if(c.afCount>=3&&!c.flags.af){
       c.flags.af=true;sel=c.idx;
       sim.triage={kind:'med',patient:c,title:'Suspected atrial fibrillation',sub:`${c.name} · ${c.role} · detected ${fmtT(sim.sec)}`,conf:.87,
-        evidence:[`RR-interval irregularity index ${c.rrIrr.toFixed(2)} (personal baseline 0.03, threshold 0.12)`,'P-wave absent on single-lead ECG, fibrillatory baseline',`HR ${c.v.hr.toFixed(0)} bpm with chaotic HRV — not explained by context (at rest, not on EVA)`,'Asymptomatic so far — would likely go unnoticed until next scheduled check'],
+        evidence:[`RR-interval irregularity index ${c.rrIrr.toFixed(2)} (personal baseline 0.03, threshold 0.12)`,'P-wave absent on single-lead ECG, fibrillatory baseline',`HR ${c.v.hr.toFixed(0)} bpm at detection with chaotic HRV — not explained by context (at rest, not on EVA)`,'Asymptomatic so far — would likely go unnoticed until next scheduled check'],
         actions:['Crew Medical Officer Dr. Kenji Ito (physician) alerted','Follow the treatment protocol below — the CMO decides every step; Guardian gives decision support and monitors']};
       c.tx={start:sim.sec};c.triMed=sim.triage;
       addLog('crit',`Cardiac anomaly — ${c.name}`,`Irregularly irregular rhythm detected from wearable ECG. Confidence 87%. Earliest answer from an Earth flight surgeon: ${sim.linkLost?'unavailable (no link)':fmtDur(DELAY*2)}.`);
-      decide('warn','Medical protocol: suspected AF',`Crew Medical Officer paged; ${c.name.split(' ')[0]}'s exertional tasks suspended.`,'Page CMO',()=>{if(!sim.shelter&&c.module!=='hab'){routeTo(c,'hab');}});
+      decide('warn','Medical protocol: suspected AF',`Crew Medical Officer paged; ${c.name.split(' ')[0]}'s exertional tasks suspended.`,'Page CMO',()=>{if(c.tx&&!c.tx.rest){c.tx.rest=sim.sec;renderTriage();}c.evaStart=null;if(!sim.shelter&&c.module!=='hab'){routeTo(c,'hab');}});
     }
   });
   // 3. Multi-crew fusion → environmental root cause (not 4 separate medical alarms)
@@ -782,33 +782,33 @@ function rateCtl(c){const x=c.tx;return x&&x.med?clamp((sim.sec-x.med)/RATE_T,0,
 function txDo(key){
   const c=sim.triage&&sim.triage.patient,x=c&&c.tx;if(!x)return;const f=c.name.split(' ')[0];
   if(key==='ecg'&&!x.ecg){x.ecg=sim.sec;x.ecgDue=sim.sec+12*60;addLog('info',`${f}: 12-lead ECG and blood pressure being recorded`,'Crew Medical Officer Dr. Kenji Ito examines the patient. Result in about 12 minutes.');}
-  else if(key==='consult'&&!x.consult&&!sim.linkLost){x.consult=sim.sec;x.consultDue=sim.sec+DELAY*2;queueEarth(`Medical consult request: ${c.name}, suspected AF`);queueEarth(`12-lead ECG strip + vitals: ${c.name}`);addLog('info','Consult request sent to Earth flight surgeon',`12-lead ECG strip and vitals queued for downlink with the request. Light-time delay: the reply can arrive at ${fmtT(x.consultDue)} at the earliest (${fmtDur(DELAY*2)} round trip). Treatment does not have to wait — the Crew Medical Officer decides.`);}
+  else if(key==='consult'&&!x.consult&&!sim.linkLost){x.consult=sim.sec;x.consultDue=sim.sec+DELAY*2;queueEarth(`Medical consult request: ${c.name}, suspected AF`);x.pre=!x.ecgOk;const strip=x.pre?'Wearable single-lead ECG strip':'12-lead ECG';queueEarth(`${strip} + vitals: ${c.name}`);addLog('info','Consult request sent to Earth flight surgeon',`${strip} and vitals queued for downlink with the request. Light-time delay: the reply can arrive at ${fmtT(x.consultDue)} at the earliest (${fmtDur(DELAY*2)} round trip). Treatment does not have to wait — the Crew Medical Officer decides.`);}
   else if(key==='med'&&x.ecgOk&&!x.med){x.med=sim.sec;addLog('warn',`${f}: rate-control medication given`,'Given by the Crew Medical Officer per the onboard medical checklist. Expected: heart rate falls over about 45 minutes; the rhythm stays irregular for now. Guardian monitors continuously.');}
   else if(key==='rest'&&!x.rest){x.rest=sim.sec;c.evaStart=null;if(!sim.shelter)routeTo(c,'hab');addLog('info',`${f}: rest ordered`,'No EVA, no exercise; physical tasks reassigned to the crew. Rest in the habitat under monitoring.');}
   renderTriage();
 }
 function treatTick(){
   CREW.forEach(c=>{const x=c.tx;if(!x||x.done)return;const f=c.name.split(' ')[0];
-    if(x.ecgDue&&!x.ecgOk&&sim.sec>=x.ecgDue){x.ecgOk=sim.sec;if(c.triMed)c.triMed.conf=.97;
-      addLog('warn',`${f}: 12-lead ECG confirms atrial fibrillation`,`Irregularly irregular RR intervals, no P waves. HR ${c.v.hr.toFixed(0)} bpm, BP 132/86 mmHg, no chest pain or fainting. Physician may now start rate control.`);}
-    if(x.consultDue&&!x.reply&&sim.sec>=x.consultDue){x.reply=sim.sec;addLog('ok','Reply from Earth flight surgeon',`Reviewed the downlinked ECG. Agrees with the onboard plan for ${c.name}: rate control, rest, continuous monitoring.`);}
-    if(x.med&&!x.rcLogged&&rateCtl(c)>=1){x.rcLogged=sim.sec;addLog('ok',`${f}: heart rate controlled`,`HR now about ${c.v.hr.toFixed(0)} bpm. Rhythm still irregular — atrial fibrillation continues, but the heart is no longer racing.`);}
+    if(x.ecgDue&&!x.ecgOk&&sim.sec>=x.ecgDue){x.ecgOk=sim.sec;if(c.triMed){const T=c.triMed;T.conf=.97;T.title='Atrial fibrillation — confirmed by 12-lead ECG';T.evidence=[...T.evidence,`12-lead ECG ${fmtT(sim.sec)}: irregular RR intervals, no P waves, HR ${c.v.hr.toFixed(0)} bpm, BP 132/86 mmHg, no chest pain`];}
+      addLog('warn',`${f}: 12-lead ECG confirms atrial fibrillation`,`Irregularly irregular RR intervals, no P waves. HR ${c.v.hr.toFixed(0)} bpm, BP 132/86 mmHg, no chest pain or fainting. The CMO may now start rate control.`);}
+    if(x.consultDue&&!x.reply&&sim.sec>=x.consultDue){x.reply=sim.sec;addLog('ok','Reply from Earth flight surgeon',x.pre?`Reviewed the wearable ECG strip of ${c.name}: likely atrial fibrillation. Recommends a 12-lead ECG to confirm; if confirmed, rate control, rest and continuous monitoring. The CMO decides onboard.`:`Reviewed the downlinked 12-lead ECG of ${c.name}: agrees with the onboard plan — rate control, rest, continuous monitoring.`);}
+    if(x.med&&!x.rcLogged&&rateCtl(c)>=1){x.rcLogged=sim.sec;if(c.triMed)c.triMed.evidence=[...c.triMed.evidence,`Rate control ${fmtT(sim.sec)}: HR now about ${c.v.hr.toFixed(0)} bpm, rhythm still irregular`];addLog('ok',`${f}: heart rate controlled`,`HR now about ${c.v.hr.toFixed(0)} bpm. Rhythm still irregular — atrial fibrillation continues, but the heart is no longer racing.`);}
     if(x.med&&x.rest&&!x.sinusDue)x.sinusDue=Math.max(x.med,x.rest)+(4+Math.random()*4)*3600;   // unknown in reality; not shown
     if(x.sinusDue&&!x.sinus&&sim.sec>=x.sinusDue){x.sinus=sim.sec;c.afib=false;}
     if(x.sinus&&!x.done&&c.afCount===0&&sim.sec-x.sinus>=30*60){x.done=sim.sec;c.flags.af=false;c.watchUntil=sim.sec+72*3600;
       if(sim.triage===c.triMed)sim.triage=null;c.triMed=null;
-      addLog('ok',`${f}: normal sinus rhythm returned`,`Regular rhythm stable for 30 minutes after ${fmtDur(x.sinus-x.med)} of medication and rest. Guardian keeps a close cardiac watch for 72 h; the physician decides on follow-up.`);}
+      addLog('ok',`${f}: normal sinus rhythm returned`,`Regular rhythm stable for 30 minutes. It returned ${fmtDur(x.sinus-Math.max(x.med,x.rest))} after medication and rest were both in place (medication given ${fmtT(x.med)}). Guardian keeps a close cardiac watch for 72 h; the CMO decides on follow-up.`);}
   });
   if(!sim.triage){const p=CREW.find(c=>c.flags.af&&c.triMed);if(p)sim.triage=p.triMed;}
 }
 function txHTML(c){
   const x=c.tx||{},row=(st,txt,btn)=>`<li class="tx ${st}"><span class="txi">${st==='ok'?'✓':st==='run'?'…':'○'}</span><span>${txt}</span>${btn||''}</li>`,B=(k,l)=>`<button class="btn on" data-tx="${k}">${l}</button>`;
   return `<div class="lbl">Treatment protocol — Crew Medical Officer decides</div><ul class="txl">
-   ${row(x.ecgOk?'ok':x.ecg?'run':'', x.ecgOk?'12-lead ECG + blood pressure: AF confirmed':x.ecg?`12-lead ECG + blood pressure: recording, result ${fmtT(x.ecgDue)}`:'1. 12-lead ECG + blood pressure, check symptoms', x.ecg?'':B('ecg','Start exam'))}
-   ${row(x.reply?'ok':x.consult?'run':'', sim.linkLost&&!x.consult?'2. Earth consult: link down — CMO decides alone with Guardian':x.reply?'Earth flight surgeon agrees with the plan':x.consult?`Earth consult sent · reply earliest ${fmtT(x.consultDue)}`:`2. Ask Earth flight surgeon, send ECG (reply takes ${fmtDur(DELAY*2)})`, x.consult||sim.linkLost?'':B('consult','Send consult'))}
-   ${row(x.rcLogged?'ok':x.med?'run':'', x.rcLogged?'Rate control working · rhythm still irregular':x.med?`Rate-control medication given ${fmtT(x.med)} · acting over ~45 min`:'3. Rate-control medication per onboard checklist'+(x.ecgOk?'':' (after the ECG)'), x.med||!x.ecgOk?'':B('med','Physician gives'))}
-   ${row(x.rest?'ok':'', x.rest?'Resting · no EVA or exercise':'4. Rest: no EVA, no exercise, tasks reassigned', x.rest?'':B('rest','Order rest'))}
-   ${row(x.sinus?'run':'', x.med&&x.rest?'Watching for normal rhythm to return (usually hours, not minutes)':'Normal rhythm can return only after medication + rest, over hours')}
+   ${row(x.rest?'ok':'', x.rest?'1. Exertion stopped · resting, no EVA or exercise':'1. Stop exertion: no EVA, no exercise, tasks reassigned', x.rest?'':B('rest','Order rest'))}
+   ${row(x.ecgOk?'ok':x.ecg?'run':'', x.ecgOk?'2. 12-lead ECG + blood pressure: AF confirmed':x.ecg?`2. 12-lead ECG + blood pressure: recording, result ${fmtT(x.ecgDue)}`:'2. 12-lead ECG + blood pressure, check symptoms', x.ecg?'':B('ecg','Start exam'))}
+   ${row(x.reply?'ok':x.consult?'run':'', sim.linkLost&&!x.consult?'3. Earth consult: link down — CMO decides alone with Guardian':x.reply?(x.pre?'3. Earth: confirm with 12-lead ECG, then rate control + rest':'3. Earth flight surgeon agrees with the plan'):x.consult?`3. Earth consult sent (${x.pre?'wearable ECG':'12-lead ECG'}) · reply earliest ${fmtT(x.consultDue)}`:`3. Ask Earth flight surgeon, send ${x.ecgOk?'12-lead':'wearable'} ECG (reply takes ${fmtDur(DELAY*2)})`, x.consult||sim.linkLost?'':B('consult','Send consult'))}
+   ${row(x.rcLogged?'ok':x.med?'run':'', x.rcLogged?'4. Rate control working · rhythm still irregular':x.med?`4. Rate-control medication given ${fmtT(x.med)} · acting over ~45 min`:'4. Rate-control medication per onboard checklist'+(x.ecgOk?'':' (after the ECG)'), x.med||!x.ecgOk?'':B('med','CMO gives'))}
+   ${row(x.med&&x.rest?'run':'', x.med&&x.rest?'5. Watching for normal rhythm to return (usually hours, not minutes)':'5. Normal rhythm can return only after medication + rest, over hours')}
   </ul>
   <div class="cap" style="margin-bottom:4px">ISS today: ground flight surgeons guide the crew in real time. At Mars the round trip is ${fmtDur(DELAY*2)}, so the crew decides onboard (NASA Earth-Independent Medical Operations).</div>`;
 }
@@ -953,7 +953,7 @@ function renderTriage(){
    <div class="lbl">Why Guardian thinks so</div><ul>${t.evidence.map(x=>`<li>${x}</li>`).join('')}</ul>
    <div class="lbl">Recommended actions</div><ul>${t.actions.map(x=>`<li>${x}</li>`).join('')}</ul>
    ${t.kind==='med'&&t.patient?txHTML(t.patient):''}
-   <div class="cap">${consult}</div>`);
+   ${t.kind==='med'?'':`<div class="cap">${consult}</div>`}`);
 }
 function renderLedger(){
   $('#ledger').innerHTML=ledger.slice().reverse().slice(0,40).map(b=>`<div class="blk ${ledgerBad===b.i?'bad':ledgerBad===-1?'good':''}"><span style="color:var(--mut)">#${b.i}</span><div><div class="tx">${b.text}</div><div class="h">${b.hash.slice(0,16)}… ← ${b.prev.slice(0,8)}…</div></div></div>`).join('');
