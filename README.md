@@ -79,7 +79,7 @@ Two views, switched in the header: **Astronaut health** for the individual astro
 | **Colour coding** at a glance | Green / amber / red everywhere |
 | **Simple instructions and explanations** | *Why it matters in space* and plain-language advice on every card |
 | Different environments (spacecraft, station, base) | A deep-space habitat on a Mars-distance mission |
-| Use **NASA HRP** and space-agency resources | Five-hazards panel, "hazards adding up" warnings, balance, cabin noise, lighting and microbes from the NASA HRP hazards page, and source links to NASA HRP and the Canadian Space Agency |
+| Use **NASA HRP** and space-agency resources (all challenge resources were read and used) | Five-hazards panel, "hazards adding up" warnings, balance, cabin noise, lighting and microbes from the NASA HRP hazards page; exercise sessions and nutrition from NASA's video on the space radiation hazard page; CSA facts, Earth benefits and ISS experiment links on every body system card |
 
 ## 4. Quick start
 
@@ -109,11 +109,11 @@ Choose the astronaut at the top. The bar shows **XP and level**, the **check-in 
 | Skeleton | Bones, muscles & balance | Exercise today, estimated bone loss without exercise, balance (nausea = possible space motion sickness), back pain |
 | Chest dosimeter | Radiation exposure | Career dose, projected end-of-mission dose, dose rate now |
 
-**Body system card.** For the selected part: colour-rated readings, the related spaceflight hazard, *Why it matters in space*, *What you can do*, a red box *Involve the flight surgeon* with the thresholds that need medical attention, and a link to the NASA HRP or CSA source.
+**Body system card.** For the selected part: colour-rated readings, the related spaceflight hazard, *Why it matters in space* (with facts from NASA HRP and the Canadian Space Agency, such as anemia, cataracts, insulin resistance, slower reflexes, and bone loss of up to 1.5% a month in space compared with about 1% a year for adults over 50), *What you can do*, *On Earth this helps* (osteoporosis, balance problems in seniors, cardiovascular disorders, type 2 diabetes), *Related space research on the ISS* (CSA experiments such as Vascular Aging, CARDIOBREATH, C-STARS, Wayfinding, SANSORI, SANSORI-2, SPARK, TBone2, AstroFit, HomeBase), a red box *Involve the flight surgeon* with the thresholds that need medical attention, and links to the sources.
 
 **Daily check-in.** Blood pressure (mmHg), heart rate (bpm; **📷** measures it with the camera), fasting blood sugar (mg/dL), body temperature (°C), sleep last night (hours), mood (five faces), teamwork today (1–5) and symptoms (headache, blurred vision, back pain, nausea). Saving rates every value and gives +50 XP. A red result is **sent to the flight surgeons on Earth** (logged by Guardian and queued with the 14 min 32 s light-time delay); amber results point to the body parts to open. **Fill example** enters sample values for demos.
 
-**Today's plan.** Morning check-in (ticked automatically), 2 h exercise, 2.5 L of water, weekly vision check, 15 min with family or crew, an 8-hour sleep window; each gives XP. Reminders appear from the mission clock (morning check-in due, exercise not logged, sleep window). **Badges:** 7-day streak, Bone guardian (exercise 5 of 7 days), Sleep champion (7-day average ≥ 7 h), Storm-ready (sheltered during a storm), Level 3.
+**Today's plan.** Morning check-in (ticked automatically); the three ISS-style exercise sessions shown in NASA's video (treadmill with harness, cycle ergometer, resistance device; two of three count as exercise done); planned meals with fresh greens; 2.5 L of water; weekly vision check; 15 min with family or crew; an 8-hour sleep window. Each gives XP. Reminders appear from the mission clock (morning check-in due, exercise not logged, sleep window). **Badges:** 7-day streak, Bone guardian (exercise 5 of 7 days), Sleep champion (7-day average ≥ 7 h), Storm-ready (sheltered during a storm), Level 3.
 
 **My trends · last 14 days.** Sleep, systolic blood pressure, blood sugar and mood, each point coloured by status. Earlier days are a simulated sample history; today is the astronaut's own entry.
 
@@ -374,6 +374,10 @@ As required by the NASA Space Apps rules, we disclose that AI tools were used du
 2. NASA Human Research Program. Risks of Human Spaceflight. https://www.nasa.gov/hrp/risks/
 3. NASA Human Research Program. Ongoing HRP Research in Space. https://www.nasa.gov/hrp/ongoing-hrp-research/
 4. Canadian Space Agency (2026). Monitoring radiation for astronaut health. https://www.asc-csa.gc.ca/eng/news/articles/2026/2026-02-26-monitoring-radiation-astronaut-health.asp
+4a. Canadian Space Agency. Why do we conduct science experiments in space? https://www.asc-csa.gc.ca/eng/iss/science/why-do-we-conduct-science-experiments-in-space.asp
+4b. Canadian Space Agency (2017). How does space affect the human body? (infographic). https://www.asc-csa.gc.ca/eng/multimedia/search/image/8056
+4c. Canadian Space Agency. Canadian experiments on the Station. https://www.asc-csa.gc.ca/eng/iss/science/experiments.asp
+4d. NASA. What Are the Dangers of Going to Space? We Asked a NASA Expert (video, on the NASA HRP space radiation hazard page). https://www.nasa.gov/hrp/hazard-space-radiation/
 5. NASA CCMC. DONKI: Space Weather Database Of Notifications, Knowledge, Information (via https://api.nasa.gov).
 6. NOAA Space Weather Prediction Center. GOES proton and X-ray JSON products (https://services.swpc.noaa.gov/json/goes/primary/), NOAA Space Weather Scales, and news on the May 2024 G5 storm and Active Region 13664.
 7. Hayakawa, H., et al. (2025). The Solar and Geomagnetic Storms in 2024 May: A Flash Data Report. *The Astrophysical Journal*.

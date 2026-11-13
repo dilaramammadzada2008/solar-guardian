@@ -216,6 +216,10 @@ main{display:grid;grid-template-columns:300px minmax(0,1fr) 370px;gap:14px;paddi
 .callout{margin-top:10px;padding:9px 11px;border-radius:9px;border:1px solid rgba(255,84,112,.45);background:rgba(255,84,112,.07);font-size:12px;line-height:1.5}
 .callout b{color:var(--rd)}
 .srcl{display:inline-block;margin-top:9px;font-size:11px;color:var(--cy)}
+.srcmini{font-size:11px;color:var(--mut)}
+.rlist{list-style:none;padding-left:0!important}
+.rlist li{margin-bottom:3px}
+.rlist a{color:var(--cy);font-size:12px}
 .cig{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .cig label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--mut)}
 .cig small{color:#56658a}
@@ -1561,15 +1565,20 @@ const HV=(()=>{
   let who=0,selSys='heart';
   const SYS={
     heart:{short:'Heart',icon:'❤️',name:'Heart & circulation',hazard:'Gravity fields · distance from Earth',
-      why:'In weightlessness body fluids shift toward the head and the heart works less against gravity. Over months this can decondition the cardiovascular system, and heart rhythm problems are one of the risks NASA tracks.',
+      why:'In weightlessness body fluids shift toward the head and the heart works less against gravity. Over months this can decondition the cardiovascular system, and heart rhythm problems are one of the risks NASA tracks. The CSA adds that blood vessels stiffen and age faster in space, and astronauts can develop insulin resistance.',
+      earth:'Research on astronauts\' hearts and vessels helps people with cardiovascular disorders and type 2 diabetes.',
+      research:[['Vascular Aging: heart health in space','https://www.asc-csa.gc.ca/eng/sciences/vascular.asp'],['CARDIOBREATH: a deep dive into astronaut health','https://www.asc-csa.gc.ca/eng/sciences/cardiobreath.asp']],
       act:['Do your aerobic exercise (cycle or treadmill) as planned','Measure blood pressure and heart rate at the same time each day','Stay hydrated'],
       call:'Blood pressure ≥ 140/90 twice, resting heart rate above 120 bpm, chest pain, fainting or an irregular rhythm.',src:['NASA HRP · Risks of human spaceflight',HRP_RISKS]},
     brain:{short:'Mind',icon:'🧠',name:'Brain, mood & sleep',hazard:'Isolation & confinement',
-      why:'Isolation, confinement, a heavy workload and disturbed sleep affect mood and thinking. Behavioral health is one of the key risks NASA studies for long missions.',
+      why:'Isolation, confinement, a heavy workload and disturbed sleep affect mood and thinking. Behavioral health is one of the key risks NASA studies for long missions. The CSA notes that astronauts\' sense of perception and orientation can become confused.',
+      earth:'Studies of the brain and orientation in space help people with balance problems, such as seniors.',
+      research:[['C-STARS: mental well-being in space','https://www.asc-csa.gc.ca/eng/sciences/cstars.asp'],['Wayfinding: how spaceflight affects the brain','https://www.asc-csa.gc.ca/eng/sciences/wayfinding.asp']],
       act:['Keep a regular sleep window and dim screens before sleep','Talk with family or crewmates; keep some private time','Try a short breathing or relaxation exercise'],
       call:'Low mood for several days in a row, sleep under 6 hours for several nights, or trouble concentrating on safety-critical tasks.',src:['NASA HRP · 5 hazards of human spaceflight',HRP_HAZ]},
     eyes:{short:'Eyes',icon:'👁️',name:'Eyes & vision',hazard:'Gravity fields',
-      why:'Fluids shifting toward the head can change the eye and optic nerve. NASA calls this SANS (spaceflight-associated neuro-ocular syndrome) and monitors crews on long missions for it.',
+      why:'Fluids shifting toward the head can change the eye and optic nerve. NASA calls this SANS (spaceflight-associated neuro-ocular syndrome) and monitors crews on long missions for it. Radiation overexposure can also cause cataracts.',
+      research:[['SANSORI: does a rigid eye protect eyesight?','https://www.asc-csa.gc.ca/eng/sciences/sansori.asp'],['SANSORI-2: protecting eye health in microgravity','https://www.asc-csa.gc.ca/eng/sciences/sansori-2.asp']],
       act:['Do the weekly vision check (reading chart)','Report blurred near vision or new headaches'],
       call:'New blurred vision, blind spots or a headache that does not go away, on the same day.',src:['NASA HRP · Risks of human spaceflight',HRP_RISKS]},
     lungs:{short:'Cabin',icon:'💨',name:'Lungs & cabin environment',hazard:'Hostile closed environment',
@@ -1577,15 +1586,20 @@ const HV=(()=>{
       act:['Check cabin CO₂ on the Mission control tab and reduce exertion while it is high','Use hearing protection near loud equipment','Follow the lighting schedule: bright cool light by day, warm dim light before sleep','Keep surfaces clean; microbe samples are taken weekly'],
       call:'Blood oxygen below 92%, difficulty breathing, or ringing in the ears after loud noise.',src:['NASA HRP · 5 hazards of human spaceflight',HRP_HAZ]},
     blood:{short:'Blood',icon:'🩸',name:'Blood sugar & immunity',hazard:'Hostile closed environment · isolation',
-      why:'Spaceflight changes the immune system (dormant viruses can reactivate) and can affect how the body handles sugar. In a small closed crew, a fever is worth catching early.',
+      why:'Spaceflight changes the immune system (dormant viruses can reactivate) and can affect how the body handles sugar. In a small closed crew, a fever is worth catching early. The CSA notes that blood cell production in the bone marrow is affected: fewer red blood cells can cause anemia, and fewer white blood cells leave the body open to infection and more sensitive to radiation. Astronauts can also develop insulin resistance.',
+      earth:'Research on insulin resistance in space helps people with type 2 diabetes.',
+      research:[['SPARK: investigating anemia in space','https://www.asc-csa.gc.ca/eng/sciences/spark.asp']],
       act:['Eat the planned meals; limit sugary snacks','Wash hands and report a fever early','Measure fasting blood sugar in the morning'],
       call:'Blood sugar below 70 or above 180 mg/dL, or a temperature of 38 °C or more.',src:['NASA HRP · Risks of human spaceflight',HRP_RISKS]},
     bones:{short:'Bones & balance',icon:'🦴',name:'Bones, muscles & balance',hazard:'Gravity fields',
-      why:'Without gravity, bones and muscles are not loaded: without exercise, astronauts can lose about 1–1.5% of bone density per month in weight-bearing bones, so ISS crews exercise about two hours a day. The inner ear, which controls balance, must adapt too: many astronauts feel space motion sickness in the first days, and they must readapt to gravity on the Moon, Mars and back on Earth.',
+      why:'Without gravity, bones and muscles are not loaded: without exercise, astronauts can lose about 1–1.5% of bone density per month in weight-bearing bones, so ISS crews exercise about two hours a day. The inner ear, which controls balance, must adapt too: many astronauts feel space motion sickness in the first days, and they must readapt to gravity on the Moon, Mars and back on Earth. For scale: adults over 50 lose about 1% of bone a year, astronauts up to 1.5% a month; muscles lose mass and strength and reflexes slow down (CSA).',
+      earth:'Bone, muscle and balance research in space helps people with osteoporosis and seniors with balance problems.',
+      research:[['TBone2: effects of microgravity on bones','https://www.asc-csa.gc.ca/eng/sciences/tbone.asp'],['AstroFit: building strength on Earth and in space','https://www.asc-csa.gc.ca/eng/sciences/astrofit.asp'],['HomeBase: finding your way without gravity','https://www.asc-csa.gc.ca/eng/sciences/homebase.asp']],
       act:['Resistance exercise (squats, deadlifts) on the resistive device','Treadmill running with a harness','Drink water: calcium released from bone raises kidney-stone risk','In the first days, move your head slowly and report dizziness or nausea'],
       call:'Back pain that does not ease, any fall or injury, or dizziness that affects your work.',src:['NASA HRP · 5 hazards of human spaceflight',HRP_HAZ]},
     rad:{short:'Radiation',icon:'☢️',name:'Radiation exposure',hazard:'Space radiation',
-      why:'Galactic cosmic rays and solar storms raise long-term cancer risk and can affect other organs. NASA limits an astronaut career to 600 mSv.',
+      why:'Galactic cosmic rays and solar storms raise long-term cancer risk and can affect other organs. NASA limits an astronaut career to 600 mSv. The CSA adds that overexposure can cause cataracts and damage DNA.',
+      research:[['Monitoring radiation for astronaut health (CSA)','https://www.asc-csa.gc.ca/eng/news/articles/2026/2026-02-26-monitoring-radiation-astronaut-health.asp']],
       act:['Follow Guardian\'s shelter orders during solar storms','Wear your personal dosimeter','Plan spacewalks when space weather is quiet'],
       call:'Guardian alerts you automatically during a radiation storm; report nausea after a storm.',src:['CSA · Monitoring radiation for astronaut health',CSA_RAD]}};
   const ORDER_S=['heart','brain','eyes','lungs','blood','bones','rad'];
@@ -1599,7 +1613,7 @@ const HV=(()=>{
     if(k==='lungs'){const cb=cabin();st=worst(S('Blood oxygen',c.v.spo2.toFixed(1)+' %',R.spo2(c.v.spo2)),S('Cabin CO₂',Math.round(env.co2)+' ppm',env.co2>4000?['bad','High']:env.co2>3000?['warn','Elevated']:['ok','Nominal']),
         S('Noise (sim)',cb.noise+' dBA',cb.noise>70?['bad','Loud']:cb.noise>60?['warn','Raised']:['ok','Quiet']),S('Lighting',cb.light,['ok','On schedule']),S('Microbes (sim)','weekly swab within limits',['ok','OK']),S('Temperature · pressure',`${env.temp.toFixed(1)} °C · ${env.press.toFixed(1)} kPa`,['ok','Nominal']));}
     if(k==='blood'){st=worst(S('Blood sugar',t.glu?t.glu+' mg/dL':'—',R.glu(t.glu)),S('Temperature',(t.temp??c.v.temp.toFixed(1))+' °C'+(t.temp?'':' (wearable)'),R.temp(t.temp??+c.v.temp.toFixed(1))));}
-    if(k==='bones'){const lossNo=(curDay()/30*1.25).toFixed(1);st=worst(S('Exercise today',p.exercise?'2 h done':'not logged',p.exercise?['ok','Done']:['warn','Due']),S('Bone loss if no exercise',`≈ ${lossNo}% by day ${curDay()}`,['ok','Info']),
+    if(k==='bones'){const lossNo=(curDay()/30*1.25).toFixed(1);st=worst(S('Exercise today',`${[p.tread,p.cycle,p.ared].filter(Boolean).length}/3 sessions`,p.exercise?['ok','Done']:['warn','Due']),S('Bone loss if no exercise',`≈ ${lossNo}% by day ${curDay()}`,['ok','Info']),
         t.nau?S('Balance','nausea reported',['warn','Possible space motion sickness']):S('Balance','no dizziness or nausea',['ok','Normal']),t.back?S('Back pain','reported',['warn','Reported']):null);}
     if(k==='rad'){const pr=projected(c),now=c.rate;st=worst(S('Career dose',`${c.dose.toFixed(0)} / 600 mSv`,c.dose/600>.8?['warn','High']:['ok','Within limit']),S('Projected end of mission',pr.toFixed(0)+' mSv',pr>600?['bad','Over limit']:pr>540?['warn','Close to limit']:['ok','OK']),S('Dose rate now',now.toFixed(3)+' mSv/h',now>1?['bad','Storm']:now>.1?['warn','Raised']:['ok','Background']));}
     return {st,items};
@@ -1632,13 +1646,15 @@ const HV=(()=>{
       ${r.items.map(([l,v,st,t])=>`<div class="vrow ${st}"><span>${l}</span><span><b>${v}</b> · ${t}</span></div>`).join('')}
       <div class="lbl2">Why it matters in space</div><p>${s.why}</p>
       <div class="lbl2">What you can do</div><ul>${s.act.map(a=>`<li>${a}</li>`).join('')}</ul>
+      ${s.earth?`<div class="lbl2">On Earth this helps</div><p>${s.earth} <span class="srcmini">(CSA: space ages the body like an accelerated, sedentary life)</span></p>`:''}
+      ${s.research?`<div class="lbl2">Related space research on the ISS</div><ul class="rlist">${s.research.map(([t,u])=>`<li><a href="${u}" target="_blank" rel="noopener">${t} ↗</a></li>`).join('')}</ul>`:''}
       <div class="callout"><b>Involve the flight surgeon:</b> ${s.call}</div>
-      <a class="srcl" href="${s.src[1]}" target="_blank" rel="noopener">Source: ${s.src[0]} ↗</a>
+      <a class="srcl" href="${s.src[1]}" target="_blank" rel="noopener">Source: ${s.src[0]} ↗</a> · <a class="srcl" href="https://www.asc-csa.gc.ca/eng/multimedia/search/image/8056" target="_blank" rel="noopener">CSA: How does space affect the human body? ↗</a>
       <div class="cap" style="margin-top:6px">Reference ranges are general adult values for illustration, not medical advice.</div>`;
     BODY.setStatus(Object.fromEntries(ORDER_S.map(k=>[k,res[k].st])),selSys);
     return res;
   }
-  const TASKS=[{id:'checkin',t:'Morning check-in (vitals, sleep, mood)',xp:50,auto:true},{id:'exercise',t:'Exercise 2 h (resistance + treadmill)',xp:40},{id:'hydrate',t:'Drink 2.5 L of water',xp:20},{id:'vision',t:'Weekly vision check',xp:20},{id:'social',t:'Talk with family or crew (15 min)',xp:20},{id:'sleep',t:'Plan an 8-hour sleep window',xp:20}];
+  const TASKS=[{id:'checkin',t:'Morning check-in (vitals, sleep, mood)',xp:50,auto:true},{id:'tread',t:'Treadmill with harness (30 min)',xp:15},{id:'cycle',t:'Cycle ergometer (30 min)',xp:15},{id:'ared',t:'Resistance device: squats, deadlifts (1 h)',xp:20},{id:'meals',t:'Eat the planned meals, incl. fresh greens',xp:20},{id:'hydrate',t:'Drink 2.5 L of water',xp:20},{id:'vision',t:'Weekly vision check',xp:20},{id:'social',t:'Talk with family or crew (15 min)',xp:20},{id:'sleep',t:'Plan an 8-hour sleep window',xp:20}];
   function renderPlan(){
     const m=ME[CREW[who].id];m.plan.checkin=!!m.today;
     $('#planList').innerHTML=TASKS.map(t=>`<div class="task ${m.plan[t.id]?'done':''} ${t.auto?'auto':''}" data-t="${t.id}" role="checkbox" aria-checked="${!!m.plan[t.id]}" tabindex="0"><span class="ck">${m.plan[t.id]?'✓':''}</span><span class="tt">${t.t}</span><span class="xp">+${t.xp} XP</span></div>`).join('');
@@ -1715,7 +1731,7 @@ const HV=(()=>{
     const t=ME[CREW[who].id].today;$('#ciChip').className='chip';$('#ciChip').textContent=t?'done today':'not done today';renderAll();});
   $('#sysList').addEventListener('click',e=>{const b=e.target.closest('[data-s]');if(b){selSys=b.dataset.s;renderSys();}});
   function toggleTask(id){const m=ME[CREW[who].id],t=TASKS.find(x=>x.id===id);if(!t||t.auto){if(t&&t.auto)toast('Done automatically when you save the check-in');return;}
-    m.plan[id]=!m.plan[id];m.xp+=m.plan[id]?t.xp:-t.xp;if(m.plan[id])toast(`${t.t} · +${t.xp} XP`);renderAll();}
+    m.plan[id]=!m.plan[id];m.xp+=m.plan[id]?t.xp:-t.xp;m.plan.exercise=[m.plan.tread,m.plan.cycle,m.plan.ared].filter(Boolean).length>=2;if(m.plan[id])toast(`${t.t} · +${t.xp} XP`);renderAll();}
   $('#planList').addEventListener('click',e=>{const r=e.target.closest('[data-t]');if(r)toggleTask(r.dataset.t);});
   $('#planList').addEventListener('keydown',e=>{if((e.key===' '||e.key==='Enter')&&e.target.dataset.t){e.preventDefault();toggleTask(e.target.dataset.t);}});
   // tabs
