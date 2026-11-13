@@ -169,7 +169,9 @@ main{display:grid;grid-template-columns:300px minmax(0,1fr) 370px;gap:14px;paddi
 .h3l.sun{color:#ffb547;font-size:11px}
 .h3l.wall{color:#6fa8ff;font-size:9px}
 .h3hint{position:absolute;left:10px;bottom:8px;font-size:10px;color:#56658a;pointer-events:none}
-.evcard{position:absolute;z-index:5;right:12px;top:12px;bottom:12px;width:min(420px,calc(100% - 24px));overflow:auto;background:rgba(8,13,26,.94);border:1px solid rgba(255,181,71,.5);border-radius:12px;padding:14px 16px;box-shadow:0 10px 40px rgba(0,0,0,.5);backdrop-filter:blur(4px)}
+.evcard{position:absolute;z-index:5;right:12px;top:12px;bottom:12px;width:min(420px,calc(100% - 24px));overflow:auto;background:rgba(8,13,26,.94);border:1px solid rgba(255,181,71,.5);border-radius:12px;padding:14px 16px 0;box-shadow:0 10px 40px rgba(0,0,0,.5);backdrop-filter:blur(4px)}
+.evx{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);color:var(--txt);cursor:pointer;font-size:13px;z-index:2}
+.evx:hover{border-color:var(--rd);color:var(--rd)}
 .evcard[hidden]{display:none}
 .evtag{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:1px;color:var(--am);text-transform:uppercase}
 .evcard h4{margin:4px 0 8px;font-size:17px}
@@ -178,7 +180,7 @@ main{display:grid;grid-template-columns:300px minmax(0,1fr) 370px;gap:14px;paddi
 .evcard li b{color:var(--txt)}
 .evsrc{font-size:10.5px;color:var(--mut);margin-top:8px}
 .evsrc a{color:var(--cy)}
-.evbtn{display:flex;gap:8px;margin-top:10px}
+.evbtn{display:flex;gap:8px;position:sticky;bottom:0;margin:10px -16px 0;padding:10px 16px 12px;background:linear-gradient(180deg,rgba(8,13,26,0),rgba(8,13,26,.98) 30%)}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -253,6 +255,7 @@ main{display:grid;grid-template-columns:300px minmax(0,1fr) 370px;gap:14px;paddi
     <section class="panel">
       <div class="ph"><h3>Deep-space habitat · live radiation map</h3><span class="mapctl"><span class="seg" id="viewSeg" hidden><button class="btn on" id="v3d">3D</button><button class="btn" id="v2d">2D</button></span><span class="chip cy" id="shipChip">GCR background only</span></span></div>
       <div class="shipwrap"><svg id="ship" viewBox="0 0 900 300" preserveAspectRatio="xMidYMid meet"></svg><canvas id="pcl"></canvas><div class="evcard" id="evCard" hidden>
+        <button class="evx" id="evX" aria-label="Close">✕</button>
         <div class="evtag">🛰 Real event · May 2024</div>
         <h4>The “Gannon storm”</h4>
         <ul>
@@ -705,8 +708,9 @@ function showEventCard(real){
   $('#evTiming').innerHTML=`Flare <b>${real.flareTxt}</b>${real.cls!=='—'?` (${real.cls})`:''} → protons <b>${real.onsetTxt}</b>: a real warning window of <b>${fmtDur(real.window)}</b>.`;
   $('#evLink').href=real.link;c.hidden=false;
   $('#evStart').onclick=()=>{c.hidden=true;startReal(real);};
-  $('#evClose').onclick=()=>{c.hidden=true;};
+  $('#evClose').onclick=$('#evX').onclick=()=>{c.hidden=true;};
 }
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#evCard').hidden)$('#evCard').hidden=true;});
 function startReal(real){
   if(!triggerSPE(real))return;
   const l=$('#realLbl');l.hidden=false;
