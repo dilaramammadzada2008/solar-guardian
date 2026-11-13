@@ -177,6 +177,7 @@ main{display:grid;grid-template-columns:300px minmax(0,1fr) 370px;gap:14px;paddi
 .vtabs .btn{padding:7px 12px;font-size:12.5px}
 #healthView{padding:14px 18px 24px}
 #healthView[hidden]{display:none}
+.hvbridge{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);font-size:12.5px;color:var(--mut)}.hvbridge .btn{padding:4px 10px}
 .hvtop{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:14px}
 .hvwho{display:flex;gap:10px;align-items:center}
 .hvlab{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mut)}
@@ -276,7 +277,7 @@ main{display:grid;grid-template-columns:300px minmax(0,1fr) 370px;gap:14px;paddi
     <svg width="30" height="30" viewBox="0 0 30 30"><defs><radialGradient id="lg" cx=".4" cy=".4"><stop offset="0" stop-color="#fff3c4"/><stop offset=".55" stop-color="#ffb547"/><stop offset="1" stop-color="#ff6a1f"/></radialGradient></defs><circle cx="15" cy="15" r="8" fill="url(#lg)"/><path d="M15 3a12 12 0 0 1 0 24" fill="none" stroke="#4fd1ff" stroke-width="2.2" stroke-linecap="round"/><path d="M15 27a12 12 0 0 1-9.5-4.7" fill="none" stroke="#4fd1ff" stroke-width="2.2" stroke-linecap="round" opacity=".5"/></svg>
     <div>SOLAR GUARDIAN<small>Autonomous crew health · space-weather AI</small></div>
   </div>
-  <div class="seg vtabs" role="tablist"><button class="btn on" id="tabMission" role="tab">Mission control</button><button class="btn" id="tabHealth" role="tab">Astronaut health</button></div>
+  <div class="seg vtabs" role="tablist"><button class="btn on" id="tabHealth" role="tab">Astronaut health</button><button class="btn" id="tabMission" role="tab">Mission control</button></div>
   <div class="hstat">Mission clock<b id="hClock">—</b></div>
   <div class="hstat">Earth link · one-way<b id="hLink">—</b></div>
   <div class="hstat">Space weather<b id="hWx">—</b></div>
@@ -406,6 +407,7 @@ main{display:grid;grid-template-columns:300px minmax(0,1fr) 370px;gap:14px;paddi
     <div class="hvwho"><span class="hvlab">Astronaut</span><span class="seg" id="hvWho"></span></div>
     <div class="hvscore" id="hvScore"></div>
   </div>
+  <div class="hvbridge">Check yourself here every day. Some problems you cannot feel — a silent arrhythmia, rising cabin CO₂, a radiation storm — so Guardian also watches the whole crew, the cabin and the Sun on <button type="button" class="btn on" id="hvToMission">Mission control →</button></div>
   <div class="hvgrid">
     <section class="panel">
       <div class="ph"><h3>My body · tap a part</h3><span class="chip" id="hvOverall">—</span></div>
@@ -1779,7 +1781,7 @@ const HV=(()=>{
   // tabs
   function show(h){$('#healthView').hidden=!h;$('main').style.display=h?'none':'';$('#tabHealth').classList.toggle('on',h);$('#tabMission').classList.toggle('on',!h);
     if(h){renderAll();BODY.resize();}else{requestAnimationFrame(()=>{window.dispatchEvent(new Event('resize'));});}}
-  $('#tabHealth').onclick=()=>show(true);$('#tabMission').onclick=()=>show(false);
+  $('#tabHealth').onclick=()=>show(true);$('#tabMission').onclick=()=>show(false);$('#hvToMission').onclick=()=>{show(false);scrollTo(0,0);};
   setInterval(()=>{if(!$('#healthView').hidden){renderScore();renderSys();renderPlan();renderHaz();}},1000);
   window.addEventListener('resize',()=>{if(!$('#healthView').hidden)drawTrend();});
   return {get who(){return who;},select:k=>{selSys=k;renderSys();},renderAll};
@@ -1949,6 +1951,8 @@ const BODY=(()=>{
   requestAnimationFrame(loop);renderLabels();
   return {setStatus,resize};
 })();
+// the astronaut's own view opens first; index.html#mission opens Mission control
+$(location.hash==='#mission'?'#tabMission':'#tabHealth').click();
 </script>
 </body>
 </html>

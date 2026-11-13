@@ -87,7 +87,9 @@ No installation and no build step: it is a single HTML file.
 
 1. Download the repository (green **Code** button, then **Download ZIP**) and unzip it.
 2. Open **`index.html`** in **Google Chrome** or **Microsoft Edge** (needed for the camera, 3D and voice). An internet connection enables the 3D views and real data; without it the app falls back to 2D and simulated space weather.
-3. Click **"▶ Run 60-second pitch demo"**, or open **Astronaut health** and press **Fill example**, then **Save check-in**.
+3. The app opens on **Astronaut health**, the astronaut's own view: press **Fill example**, then **Save check-in**, and click a body part. Then open **Mission control** (tab or the *Mission control →* button) and click **"▶ Run 60-second pitch demo"**. `index.html#mission` opens Mission control directly.
+
+**Suggested pitch order.** (1) *Astronaut health*: the astronaut checks in, measures their pulse with the camera, taps the heart and sees what to do; this is the challenge's core. (2) *Mission control*: the problems an astronaut cannot feel (a silent arrhythmia, cabin CO₂, a radiation storm), which Guardian finds and handles onboard because Earth is 29 minutes away.
 
 Live version (GitHub Pages, available when the repository is public): https://dilaramammadzada2008.github.io/solar-guardian/
 
