@@ -22,6 +22,7 @@ header{display:flex;align-items:center;gap:22px;padding:12px 18px;border-bottom:
 .btn:hover{border-color:var(--cy)}
 .btn.on{background:rgba(79,209,255,.14);border-color:var(--cy);color:var(--cy)}
 .btn.warn{border-color:rgba(255,84,112,.5)}
+.txl{list-style:none;padding:0;margin:4px 0 6px}.txl li.tx{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px dashed var(--line);font-size:12.5px}.txl li.tx>span:nth-child(2){flex:1}.txl .txi{width:16px;text-align:center;color:var(--mut)}.txl li.ok .txi{color:#3ddc97}.txl li.run .txi{color:var(--cy)}.txl .btn{padding:4px 9px;font-size:11.5px}
 .seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
 .seg .btn{border:0;border-radius:0;padding:7px 10px}
 main{display:grid;grid-template-columns:300px minmax(0,1fr) 370px;gap:14px;padding:14px 18px 24px}
@@ -623,8 +624,9 @@ function updateCrew(c,dt){
   const co2x=clamp((env.co2-2500)/3500,0,1.2);
   const anx=(sim.spe&&sim.spe.detected)?1:0;
   const k=1-Math.exp(-dt/240);
-  let hrT=b.hr+4*circ+(eva?42:moving?12:0)+14*co2x+5*anx+(c.afib?46:0);
-  V.hr+=(hrT-V.hr)*k+gauss()*(c.afib?9:1.1);
+  const rc=rateCtl(c);
+  let hrT=b.hr+4*circ+(eva?42:moving?12:0)+14*co2x+5*anx+(c.afib?46*(1-.8*rc):0);
+  V.hr+=(hrT-V.hr)*k+gauss()*(c.afib?9-6*rc:1.1);
   V.spo2+=((b.spo2-1.9*co2x-(eva?.6:0))-V.spo2)*k+gauss()*.1;
   let hrvT=c.afib?118:b.hrv-(eva?22:moving?7:0)-14*co2x-5*anx;
   V.hrv+=(hrvT-V.hrv)*k+gauss()*(c.afib?14:1.8);
@@ -643,9 +645,9 @@ function updateCrew(c,dt){
   }
   // risk fusion
   let r=4;
-  r+=eva?5:Math.max(0,Math.abs(c.z.hr)-2)*7;
+  r+=eva?5:c.flags.af?0:Math.max(0,Math.abs(c.z.hr)-2)*7;   // AF already counted below
   if(V.spo2<94)r+=(94-V.spo2)*10;
-  if(c.flags.af)r+=48;
+  if(c.flags.af)r+=!c.afib?24:rateCtl(c)>=.9?28:56;
   r+=c.rate*3;
   if(projected(c)>LIMIT)r+=12;
   if(V.cog<85)r+=(85-V.cog)*1.2;
@@ -683,6 +685,7 @@ function allClear(){
   if(sim.triage&&sim.triage.kind==='rad')sim.triage=null;
 }
 function guardian(){
+  treatTick();
   // 1. Flare → forecast → shelter before protons arrive
   if(sim.spe&&!sim.spe.detected&&sim.sec-sim.spe.t0>=150){
     sim.spe.detected=true;
@@ -712,7 +715,8 @@ function guardian(){
       c.flags.af=true;sel=c.idx;
       sim.triage={kind:'med',patient:c,title:'Suspected atrial fibrillation',sub:`${c.name} · ${c.role} · detected ${fmtT(sim.sec)}`,conf:.87,
         evidence:[`RR-interval irregularity index ${c.rrIrr.toFixed(2)} (personal baseline 0.03, threshold 0.12)`,'P-wave absent on single-lead ECG, fibrillatory baseline',`HR ${c.v.hr.toFixed(0)} bpm with chaotic HRV — not explained by context (at rest, not on EVA)`,'Asymptomatic so far — would likely go unnoticed until next scheduled check'],
-        actions:['Onboard flight surgeon Dr. Kenji Ito alerted','Obtain 12-lead ECG and blood pressure; assess symptoms','Restrict exertion; reassign today\'s physical tasks','Treatment per onboard medical checklist — physician decides']};
+        actions:['Onboard flight surgeon Dr. Kenji Ito alerted','Follow the treatment protocol below — every step is a physician decision, Guardian only tracks and monitors']};
+      c.tx={start:sim.sec};c.triMed=sim.triage;
       addLog('crit',`Cardiac anomaly — ${c.name}`,`Irregularly irregular rhythm detected from wearable ECG. Confidence 87%. Earliest answer from an Earth flight surgeon: ${sim.linkLost?'unavailable (no link)':fmtDur(DELAY*2)}.`);
       decide('warn','Medical protocol: suspected AF',`Flight surgeon paged; ${c.name.split(' ')[0]}'s exertional tasks suspended.`,'Page flight surgeon',()=>{if(!sim.shelter&&c.module!=='hab'){routeTo(c,'hab');}});
     }
@@ -761,7 +765,7 @@ function startEVA(){
   a.evaStart=sim.sec;routeTo(a,'eva');sel=2;
   addLog('info','EVA started — Aylin Rahimova','Guardian switches to context-aware thresholds: an exertion HR rise is expected and not flagged.');
 }
-function triggerAF(){const j=CREW[3];if(j.afib)return;j.afib=true;toast('Scenario injected: silent arrhythmia (Guardian is not told)');}
+function triggerAF(){const j=CREW[3];if(j.afib||j.flags.af)return;j.afib=true;j.tx=null;toast('Scenario injected: silent arrhythmia (Guardian is not told)');}
 function triggerCO2(){
   if(env.eff<.8||(G.co2&&!G.co2ok)){toast('A CO₂ scrubber fault is already in progress');return;}
   const u=env.scrubber;env.eff=.52;env.failed=u;
@@ -772,7 +776,41 @@ function toggleLink(){
   if(sim.linkLost)addLog('crit','Earth link lost — solar conjunction','Guardian is now fully autonomous. Decisions are logged to the ledger and queued for Mission Control.');
   else{earth.forEach(e=>{if(e.arrive==null)e.arrive=sim.sec+DELAY;});addLog('ok','Earth link restored',`Queued reports transmitting; first arrive in ${fmtDur(DELAY)}.`);}
 }
-function treatAF(){const c=sim.triage&&sim.triage.patient;if(!c)return;c.afib=false;c.flags.af=false;sim.triage=null;addLog('ok',`${c.name}: sinus rhythm restored`,'Treated by onboard flight surgeon. Guardian keeps elevated cardiac watch for 72 h.');}
+/* ---------- AF treatment protocol: realistic, gradual, physician-led ---------- */
+const RATE_T=45*60;   // rate-control medication takes ~45 min to slow the heart
+function rateCtl(c){const x=c.tx;return x&&x.med?clamp((sim.sec-x.med)/RATE_T,0,1):0;}
+function txDo(key){
+  const c=sim.triage&&sim.triage.patient,x=c&&c.tx;if(!x)return;const f=c.name.split(' ')[0];
+  if(key==='ecg'&&!x.ecg){x.ecg=sim.sec;x.ecgDue=sim.sec+12*60;addLog('info',`${f}: 12-lead ECG and blood pressure being recorded`,'Onboard flight surgeon Dr. Kenji Ito examines the patient. Result in about 12 minutes.');}
+  else if(key==='consult'&&!x.consult&&!sim.linkLost){x.consult=sim.sec;x.consultDue=sim.sec+DELAY*2;queueEarth(`Medical consult request: ${c.name}, suspected AF`);addLog('info','Consult request sent to Earth flight surgeon',`Light-time delay: the reply can arrive at ${fmtT(x.consultDue)} at the earliest (${fmtDur(DELAY*2)} round trip). Treatment does not have to wait — the onboard physician decides.`);}
+  else if(key==='med'&&x.ecgOk&&!x.med){x.med=sim.sec;addLog('warn',`${f}: rate-control medication given`,'Given by the onboard physician per the onboard medical checklist. Expected: heart rate falls over about 45 minutes; the rhythm stays irregular for now. Guardian monitors continuously.');}
+  else if(key==='rest'&&!x.rest){x.rest=sim.sec;c.evaStart=null;if(!sim.shelter)routeTo(c,'hab');addLog('info',`${f}: rest ordered`,'No EVA, no exercise; physical tasks reassigned to the crew. Rest in the habitat under monitoring.');}
+  renderTriage();
+}
+function treatTick(){
+  CREW.forEach(c=>{const x=c.tx;if(!x||x.done)return;const f=c.name.split(' ')[0];
+    if(x.ecgDue&&!x.ecgOk&&sim.sec>=x.ecgDue){x.ecgOk=sim.sec;if(c.triMed)c.triMed.conf=.97;
+      addLog('warn',`${f}: 12-lead ECG confirms atrial fibrillation`,`Irregularly irregular RR intervals, no P waves. HR ${c.v.hr.toFixed(0)} bpm, BP 132/86 mmHg, no chest pain or fainting. Physician may now start rate control.`);}
+    if(x.consultDue&&!x.reply&&sim.sec>=x.consultDue){x.reply=sim.sec;addLog('ok','Reply from Earth flight surgeon',`Agrees with the onboard plan for ${c.name}: rate control, rest, continuous monitoring. Earth asks for the ECG data with the next downlink.`);}
+    if(x.med&&!x.rcLogged&&rateCtl(c)>=1){x.rcLogged=sim.sec;addLog('ok',`${f}: heart rate controlled`,`HR now about ${c.v.hr.toFixed(0)} bpm. Rhythm still irregular — atrial fibrillation continues, but the heart is no longer racing.`);}
+    if(x.med&&x.rest&&!x.sinusDue)x.sinusDue=Math.max(x.med,x.rest)+(4+Math.random()*4)*3600;   // unknown in reality; not shown
+    if(x.sinusDue&&!x.sinus&&sim.sec>=x.sinusDue){x.sinus=sim.sec;c.afib=false;}
+    if(x.sinus&&!x.done&&c.afCount===0&&sim.sec-x.sinus>=30*60){x.done=sim.sec;c.flags.af=false;c.watchUntil=sim.sec+72*3600;
+      if(sim.triage===c.triMed)sim.triage=null;c.triMed=null;
+      addLog('ok',`${f}: normal sinus rhythm returned`,`Regular rhythm stable for 30 minutes after ${fmtDur(x.sinus-x.med)} of medication and rest. Guardian keeps a close cardiac watch for 72 h; the physician decides on follow-up.`);}
+  });
+  if(!sim.triage){const p=CREW.find(c=>c.flags.af&&c.triMed);if(p)sim.triage=p.triMed;}
+}
+function txHTML(c){
+  const x=c.tx||{},row=(st,txt,btn)=>`<li class="tx ${st}"><span class="txi">${st==='ok'?'✓':st==='run'?'…':'○'}</span><span>${txt}</span>${btn||''}</li>`,B=(k,l)=>`<button class="btn on" data-tx="${k}">${l}</button>`;
+  return `<div class="lbl">Treatment protocol — physician decides</div><ul class="txl">
+   ${row(x.ecgOk?'ok':x.ecg?'run':'', x.ecgOk?'12-lead ECG + blood pressure: AF confirmed':x.ecg?`12-lead ECG + blood pressure: recording, result ${fmtT(x.ecgDue)}`:'1. 12-lead ECG + blood pressure, check symptoms', x.ecg?'':B('ecg','Start exam'))}
+   ${row(x.reply?'ok':x.consult?'run':'', sim.linkLost&&!x.consult?'2. Earth consult: link down — onboard physician decides alone':x.reply?'Earth flight surgeon agrees with the plan':x.consult?`Earth consult sent · reply earliest ${fmtT(x.consultDue)}`:`2. Ask Earth flight surgeon (reply takes ${fmtDur(DELAY*2)})`, x.consult||sim.linkLost?'':B('consult','Send consult'))}
+   ${row(x.rcLogged?'ok':x.med?'run':'', x.rcLogged?'Rate control working · rhythm still irregular':x.med?`Rate-control medication given ${fmtT(x.med)} · acting over ~45 min`:'3. Rate-control medication per onboard checklist'+(x.ecgOk?'':' (after the ECG)'), x.med||!x.ecgOk?'':B('med','Physician gives'))}
+   ${row(x.rest?'ok':'', x.rest?'Resting · no EVA or exercise':'4. Rest: no EVA, no exercise, tasks reassigned', x.rest?'':B('rest','Order rest'))}
+   ${row(x.sinus?'run':'', x.med&&x.rest?'Watching for normal rhythm to return (usually hours, not minutes)':'Normal rhythm can return only after medication + rest, over hours')}
+  </ul>`;
+}
 function runDemo(){
   setSpeed(20);const t=sim.sec;
   sim.demo=[{at:t,fn:startEVA},{at:t+2000,fn:triggerSPE},{at:t+40500,fn:triggerCO2},{at:t+47000,fn:triggerAF}];
@@ -903,17 +941,18 @@ function renderCrew(){
 function renderLog(){
   $('#log').innerHTML=logs.map(e=>`<div class="le ${e.level}"><div class="lt"><time>${fmtT(e.t)}</time><b>${e.title}</b>${e.auto?`<span class="chip cy">AUTO · ${e.auto}</span>`:''}</div><p>${e.detail}</p>${e.action?`<div class="act">${e.done?'<span class="chip ok">✓ approved by crew</span>':`<button class="btn on" data-act="${e.id}">${e.action.label}</button><span class="chip am">autonomy off</span>`}</div>`:''}</div>`).join('')||'<div class="empty">No events yet.</div>';
 }
+function setHTML(el,h){if(el._h!==h){el._h=h;el.innerHTML=h;}}
 function renderTriage(){
   const t=sim.triage,el=$('#triage'),ch=$('#triChip');
-  if(!t){ch.className='chip ok';ch.textContent='standby';el.innerHTML=`<div class="empty">No active event.<br>Guardian is watching <b>4 crew × 7 signals</b> against each person's own baseline, plus cabin air and the Sun.<br><br>When something happens, a full triage appears here in under a second — without waiting ${fmtDur(DELAY*2)} for an answer from Earth.</div>`;return;}
+  if(!t){ch.className='chip ok';ch.textContent='standby';setHTML(el,`<div class="empty">No active event.<br>Guardian is watching <b>4 crew × 7 signals</b> against each person's own baseline, plus cabin air and the Sun.<br><br>When something happens, a full triage appears here in under a second — without waiting ${fmtDur(DELAY*2)} for an answer from Earth.</div>`);return;}
   const map={rad:['RADIOLOGICAL','am'],med:['MEDICAL','rd'],env:['ENVIRONMENTAL','cy']};ch.className='chip '+map[t.kind][1];ch.textContent=map[t.kind][0];
   const consult=sim.linkLost?'<span style="color:var(--rd)">Earth unreachable — onboard autonomy</span>':`Earth reply earliest in ${fmtDur(DELAY*2)} (round trip)`;
-  el.innerHTML=`<h4>${t.title}</h4><div class="sub">${t.sub}</div>
+  setHTML(el,`<h4>${t.title}</h4><div class="sub">${t.sub}</div>
    <div class="conf"><span>confidence</span><div class="bar"><i style="width:${t.conf*100}%"></i></div><span>${Math.round(t.conf*100)}%</span></div>
    <div class="lbl">Why Guardian thinks so</div><ul>${t.evidence.map(x=>`<li>${x}</li>`).join('')}</ul>
    <div class="lbl">Recommended actions</div><ul>${t.actions.map(x=>`<li>${x}</li>`).join('')}</ul>
-   <div class="cap">${consult}</div>
-   ${t.kind==='med'?'<button class="btn on" id="bTreat" style="margin-top:9px">Mark treated by flight surgeon</button>':''}`;
+   ${t.kind==='med'&&t.patient?txHTML(t.patient):''}
+   <div class="cap">${consult}</div>`);
 }
 function renderLedger(){
   $('#ledger').innerHTML=ledger.slice().reverse().slice(0,40).map(b=>`<div class="blk ${ledgerBad===b.i?'bad':ledgerBad===-1?'good':''}"><span style="color:var(--mut)">#${b.i}</span><div><div class="tx">${b.text}</div><div class="h">${b.hash.slice(0,16)}… ← ${b.prev.slice(0,8)}…</div></div></div>`).join('');
@@ -1108,9 +1147,9 @@ $('#bVoice').onclick=()=>{
   else{try{speechSynthesis.cancel();}catch(e){}AUD.pending=0;}
   updateVoiceBtn();
 };
-$('#crew').addEventListener('click',e=>{const c=e.target.closest('.cc');if(c){sel=+c.dataset.i;renderPanels();}});
+$('#crew').addEventListener('pointerdown',e=>{const c=e.target.closest('.cc');if(c){sel=+c.dataset.i;renderPanels();}});
 $('#log').addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const en=logs.find(l=>l.id===+b.dataset.act);if(en&&!en.done){en.done=true;en.action.fn();ledgerAdd('APPROVED by crew · '+en.action.label);renderLog();}});
-$('#triage').addEventListener('click',e=>{if(e.target.id==='bTreat')treatAF();});
+$('#triage').addEventListener('click',e=>{const b=e.target.closest('[data-tx]');if(b)txDo(b.dataset.tx);});
 $('#sDemo').onclick=runDemo;$('#sSpe').onclick=()=>triggerSPE();$('#sReal').onclick=replayReal;$('#sEva').onclick=startEVA;$('#sAf').onclick=triggerAF;$('#sCo2').onclick=triggerCO2;$('#sLink').onclick=toggleLink;
 $('#sReset').onclick=()=>{try{location.reload();}catch(e){}};
 $('#lVerify').onclick=verifyLedger;$('#lTamper').onclick=tamper;
@@ -1609,7 +1648,7 @@ const HV=(()=>{
     const c=CREW[who],t=ME[c.id].today||{},p=ME[c.id].plan,items=[],S=(l,v,r)=>{if(r)items.push([l,v,r[0],r[1]]);return r&&r[0];};
     let st='ok';
     if(k==='heart'){const hr=t.hr??Math.round(c.v.hr);st=worst(S('Heart rate',hr+' bpm'+(t.hr?'':' (wearable)'),R.hr(hr)),S('Blood pressure',t.sys?`${t.sys}/${t.dia} mmHg`:'—',R.bp(t.sys,t.dia)),
-        c.flags.af?S('Rhythm','irregular (Guardian)',['bad','Check now']):S('Rhythm','regular (wearable ECG)',['ok','Normal']));}
+        c.flags.af?(c.afib?(rateCtl(c)>=1?S('Rhythm','irregular · rate controlled',['warn','Under treatment']):S('Rhythm','irregular (Guardian)',['bad','Check now'])):S('Rhythm','regular again · confirming',['warn','Under treatment'])):c.watchUntil>sim.sec?S('Rhythm','regular · 72 h cardiac watch',['warn','Monitoring']):S('Rhythm','regular (wearable ECG)',['ok','Normal']));}
     if(k==='brain'){st=worst(S('Mood',t.mood?MOODS[t.mood-1]+' '+t.mood+'/5':'—',R.mood(t.mood)),S('Sleep',t.sleep!=null?t.sleep+' h':'—',R.sleep(t.sleep)),S('Teamwork',t.team?t.team+'/5':'—',R.team(t.team)),S('Cognition test',Math.round(c.v.cog)+'/100',R.cog(c.v.cog)),t.head?S('Headache','reported',['warn','Reported']):null,t.aid?S('Sleep aid','used last night',['warn','Common in orbit · watch the body clock']):null);}
     if(k==='eyes'){st=worst(t.vis?S('Blurred vision','reported',['warn','Possible SANS sign']):S('Blurred vision','none reported',['ok','Normal']),S('Weekly vision check',p.vision?'done today':'not done',p.vision?['ok','Done']:['warn','Due']));}
     if(k==='lungs'){const cb=cabin();st=worst(S('Blood oxygen',c.v.spo2.toFixed(1)+' %',R.spo2(c.v.spo2)),S('Cabin CO₂',Math.round(env.co2)+' ppm',env.co2>4000?['bad','High']:env.co2>3000?['warn','Elevated']:['ok','Nominal']),

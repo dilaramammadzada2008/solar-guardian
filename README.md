@@ -54,7 +54,7 @@ Two views, switched in the header: **Astronaut health** for the individual astro
 | **Real space weather** | Live NOAA GOES proton and X-ray data, and a replay of the real May 2024 storm with NASA DONKI timing. |
 | **Personal-baseline anomaly detection** | Compares each astronaut with their *own* normal, learned over 142 mission days. Expected changes (a heart-rate rise during a spacewalk) are not flagged. |
 | **Multi-crew fusion** | When all crew drift at the same time in the same direction, Guardian concludes the cause is the cabin (CO₂), not four bodies, and fixes the cause. |
-| **ECG arrhythmia detection** | Finds a hidden atrial fibrillation from beat-to-beat irregularity and alerts the flight surgeon. |
+| **ECG arrhythmia detection and treatment protocol** | Finds a hidden atrial fibrillation from beat-to-beat irregularity, alerts the flight surgeon and tracks a realistic, physician-led treatment: exam, Earth consult with the real delay, rate control, rest, hours until normal rhythm. |
 | **Dose-aware mission planning** | Tracks each career dose against NASA's 600 mSv limit and reassigns spacewalks before anyone would exceed it. |
 | **Earth light-delay autonomy** | Decides onboard, queues decisions and flagged check-ins for Mission Control, and keeps working when the link is lost. A human can switch autonomy off and approve each action. |
 | **3D habitat** | An ISS-style station in Mars orbit with animated astronauts in realistic spacesuits, the water-walled shelter and radiation particles. |
@@ -147,7 +147,7 @@ Each button injects an event. **Guardian is not told about it**; it has to detec
 | **☀ Solar particle event (X-class flare)** | A flare erupts; protons arrive about 25 simulated minutes later and peak around NOAA S3. | Forecasts dose per module (HAB 21.0, shelter 3.8, EVA 67 mSv), aborts the EVA if ingress is faster than proton arrival, orders the shelter protocol, counts the dose averted, gives *ALL CLEAR* below S1. |
 | **🛰 Replay real storm — May 2024 (NASA DONKI)** | Loads the real event, shows a "Gannon storm" background card, then replays it with the real warning window (5 h 14 min). | Same protocol; reports how early it sheltered the crew before the real proton onset. |
 | **⛑ Start EVA — Aylin** | Aylin goes outside; her heart rate rises. | Context-aware thresholds, so no false alarm. Refuses an EVA during a storm. |
-| **♥ Hidden cardiac arrhythmia — Jonas** | Jonas develops atrial fibrillation he does not feel. | Detects irregular beat-to-beat intervals, raises an ALERT, alerts the flight surgeon. |
+| **♥ Hidden cardiac arrhythmia — Jonas** | Jonas develops atrial fibrillation he does not feel. | Detects irregular beat-to-beat intervals, raises an ALERT, alerts the flight surgeon, then tracks the treatment protocol step by step. |
 | **≋ CO₂ scrubber degradation** | The active scrubber drops to 52% efficiency; CO₂ rises. | Sees 4/4 crew drifting together, names the cabin as the root cause, switches scrubber. Works repeatedly (B → A → B). |
 | **♥ Live heart sensor — guest** | Opens the camera sensor. | Measures a real person and adds them as a live crew card. |
 | **⌁ Cut Earth link** | Simulates solar conjunction. | Keeps working; messages wait as *held · no link*. |
@@ -187,6 +187,8 @@ Guardian is the decision engine inside the app. It is deliberately **explainable
 **Multi-crew fusion.** If cabin CO₂ exceeds 3,900 ppm and at least 3 of 4 crew show heart-rate deviation or reduced cognition at the same time, Guardian reports one environmental root cause instead of separate medical alarms.
 
 **Arrhythmia.** An RR-interval irregularity index above 0.12 (personal baseline 0.03), at rest and outside an EVA, is reported as suspected atrial fibrillation.
+
+**Treatment protocol (no instant cure).** A button cannot stop an arrhythmia, so the triage shows a checklist the onboard physician works through, and every step is the physician's decision: (1) 12-lead ECG and blood pressure, with the result about 12 minutes later; (2) a consult with the Earth flight surgeon, whose reply arrives only after the real round-trip light delay (29 min), so treatment does not wait for it; (3) rate-control medication per the onboard checklist, which is only possible after the ECG and never names a drug or dose; (4) rest, with no EVA or exercise. After the medication the heart rate falls over about 45 minutes while the rhythm **stays irregular** ("rate controlled", risk ALERT → WATCH). Normal sinus rhythm returns only after several hours of medication plus rest, when Guardian has seen 30 minutes of regular rhythm, and a 72-hour cardiac watch follows. Guardian monitors and documents; it never treats.
 
 **Radiation.** Dose rate per module = solar proton rate × module shielding factor + galactic background. The storm shelter lets through about 18% of the HAB's solar proton dose (about **5.5× lower**); the EVA worksite gets 3.2× the HAB dose. Career dose is projected to the end of the 500-day mission at 0.9 mSv/day.
 
