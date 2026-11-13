@@ -14,7 +14,7 @@ Built for the **NASA Space Apps Challenge 2026**, challenge *"Create Health Moni
 2. [What Solar Guardian does](#2-what-solar-guardian-does)
 3. [How it answers the challenge](#3-how-it-answers-the-challenge)
 4. [Quick start](#4-quick-start)
-5. [My health: the astronaut's own view](#5-my-health-the-astronauts-own-view)
+5. [Astronaut health: the astronaut's own view](#5-astronaut-health-the-astronauts-own-view)
 6. [Mission control: tour of the interface](#6-mission-control-tour-of-the-interface)
 7. [Mission scenarios](#7-mission-scenarios)
 8. [Real data: NOAA live Sun and NASA DONKI storm replay](#8-real-data-noaa-live-sun-and-nasa-donki-storm-replay)
@@ -44,11 +44,11 @@ On the way to Mars a radio signal needs **14 min 32 s** to reach Earth one way, 
 
 ## 2. What Solar Guardian does
 
-Two views, switched in the header: **🧑‍🚀 My health** for the individual astronaut, and **🛰 Mission control** for the crew, the ship and the Sun.
+Two views, switched in the header: **Astronaut health** for the individual astronaut, and **Mission control** for the crew, the ship and the Sun.
 
 | Capability | What it means |
 |---|---|
-| **Self-assessment ("My health")** | A daily check-in (blood pressure, heart rate, blood sugar, temperature, sleep, mood, symptoms), a clickable 3D body coloured by status, and for every body system: readings, why it matters in space, what to do, and when to involve the flight surgeon. |
+| **Self-assessment ("Astronaut health")** | A daily check-in (blood pressure, heart rate, blood sugar, temperature, sleep, mood, teamwork, symptoms), a clickable 3D anatomy model (skin, skeleton, organs, vessels) that glows by status, and for every body system: readings, why it matters in space, what to do, and when to involve the flight surgeon. |
 | **Routine and motivation** | A daily plan with reminders from the mission clock, XP, streaks and badges. |
 | **Space-weather-aware radiation protection** | Detects a flare while it is still rising, forecasts every astronaut's dose per module, aborts spacewalks and sends the crew to the water-walled storm shelter before the protons arrive. |
 | **Real space weather** | Live NOAA GOES proton and X-ray data, and a replay of the real May 2024 storm with NASA DONKI timing. |
@@ -57,7 +57,8 @@ Two views, switched in the header: **🧑‍🚀 My health** for the individual 
 | **ECG arrhythmia detection** | Finds a hidden atrial fibrillation from beat-to-beat irregularity and alerts the flight surgeon. |
 | **Dose-aware mission planning** | Tracks each career dose against NASA's 600 mSv limit and reassigns spacewalks before anyone would exceed it. |
 | **Earth light-delay autonomy** | Decides onboard, queues decisions and flagged check-ins for Mission Control, and keeps working when the link is lost. A human can switch autonomy off and approve each action. |
-| **3D habitat** | The ship in 3D with animated astronauts, the water-walled shelter and radiation particles. |
+| **3D habitat** | An ISS-style station in Mars orbit with animated astronauts in realistic spacesuits, the water-walled shelter and radiation particles. |
+| **Hazards adding up** | Following NASA's note that the five hazards "can feed off one another", Guardian warns when they combine (for example poor sleep + high CO₂). |
 | **Live heart sensor** | Measures a real person's heart rate with the camera: fingertip or contactless from the face. |
 | **Tamper-proof medical ledger** | Every decision is written into a SHA-256 hash chain; editing any past record is detected. |
 | **Voice and alarm tones** | Critical events trigger an alarm and a spoken alert. |
@@ -66,19 +67,19 @@ Two views, switched in the header: **🧑‍🚀 My health** for the individual 
 
 | Challenge text | Where it is in Solar Guardian |
 |---|---|
-| A visual tool that helps astronauts **assess their own health** | **My health** tab: daily check-in, 3D body, status per body system |
+| A visual tool that helps astronauts **assess their own health** | **Astronaut health** tab: daily check-in, 3D anatomy model, status per body system |
 | Provide **guidance on treatments and health improvements** | Body system cards: *What you can do* |
 | Input by **keyboard, mouse clicks or camera images** | Check-in form, clickable body and plan, **camera heart rate** (fingertip or face) |
 | Indicators such as **blood pressure, heart rate, blood sugar, body temperature, sleep hours, mood** | All six are in the check-in, each colour-rated |
 | **When might a result warrant attention** from the crew or flight surgeons on the ground? | *Involve the flight surgeon* box per system; flagged check-ins are queued to Earth with the real light-time delay |
-| A **human figure where each part is clickable** | 3D body: brain, eyes, lungs, heart, blood, bones, radiation dosimeter |
+| A **human figure where each part is clickable** | 3D anatomy model with labels and leader lines: brain, eyes, lungs, heart, blood and liver, skeleton, radiation dosimeter |
 | **Prompt astronauts to take measurements** as part of the routine | Today's plan and reminders driven by the mission clock |
 | **Gamification** | XP, levels, check-in streaks, badges |
 | **Dynamic charts** of indicators over time | 14-day trends; live ECG and vital-sign trends |
 | **Colour coding** at a glance | Green / amber / red everywhere |
 | **Simple instructions and explanations** | *Why it matters in space* and plain-language advice on every card |
 | Different environments (spacecraft, station, base) | A deep-space habitat on a Mars-distance mission |
-| Use **NASA HRP** and space-agency resources | Five-hazards panel and source links to NASA HRP and the Canadian Space Agency |
+| Use **NASA HRP** and space-agency resources | Five-hazards panel, "hazards adding up" warnings, balance, cabin noise, lighting and microbes from the NASA HRP hazards page, and source links to NASA HRP and the Canadian Space Agency |
 
 ## 4. Quick start
 
@@ -86,37 +87,39 @@ No installation and no build step: it is a single HTML file.
 
 1. Download the repository (green **Code** button, then **Download ZIP**) and unzip it.
 2. Open **`index.html`** in **Google Chrome** or **Microsoft Edge** (needed for the camera, 3D and voice). An internet connection enables the 3D views and real data; without it the app falls back to 2D and simulated space weather.
-3. Click **"▶ Run 60-second pitch demo"**, or open **🧑‍🚀 My health** and press **Fill example**, then **Save check-in**.
+3. Click **"▶ Run 60-second pitch demo"**, or open **Astronaut health** and press **Fill example**, then **Save check-in**.
 
 Live version (GitHub Pages, available when the repository is public): https://dilaramammadzada2008.github.io/solar-guardian/
 
 **Before every presentation:** press **↺ Reset mission**, switch **Voice: ON** with a real click (browsers only allow sound after a click), and enter your NASA API key with **⚙** in the Sun panel (see section 8).
 
-## 5. My health: the astronaut's own view
+## 5. Astronaut health: the astronaut's own view
 
 Choose the astronaut at the top. The bar shows **XP and level**, the **check-in streak** and **exercise days this week**.
 
-**My body · tap a part.** A rotating 3D body. Each part is coloured by its status (green good, amber attention, red pulsing act now); the heart beats at the astronaut's real heart rate. Click a part, or use the buttons below the figure:
+**My body · tap a part.** A 3D anatomy model in x-ray style: translucent skin, a skeleton (skull, spine, 12 pairs of ribs, pelvis, limb bones), organs (brain, eyes, lungs with trachea and bronchi, a heart that beats at the astronaut's heart rate with the aorta and vena cava, liver, spleen, stomach, intestines, kidneys, bladder) and blood vessels (red arteries, blue veins). Organs keep their natural colours; a system that needs attention glows amber and one that needs action pulses red. Labels with leader lines (Brain, Eyes, Lungs, Heart, Blood & liver, Skeleton, Dosimeter) show each system's status and can be clicked, as can the organs themselves. Layer buttons show or hide **Skin, Skeleton, Organs, Vessels**. Drag to turn, scroll to zoom, double-click to reset. It is a stylised teaching model, not a medical-grade atlas.
 
 | Part | System | What is rated |
 |---|---|---|
 | Heart | Heart & circulation | Heart rate, blood pressure, rhythm (from Guardian's ECG) |
-| Head | Brain, mood & sleep | Mood, sleep hours, cognition test, headache |
+| Brain | Brain, mood & sleep | Mood, sleep hours, teamwork, cognition test, headache |
 | Eyes | Eyes & vision | Blurred vision (possible SANS sign), weekly vision check |
-| Lungs | Lungs & cabin air | Blood oxygen, cabin CO₂ |
-| Arms | Blood sugar & immunity | Fasting blood sugar, temperature, nausea |
-| Spine and legs | Bones & muscles | Exercise today, estimated bone loss without exercise, back pain |
+| Lungs | Lungs & cabin environment | Blood oxygen, cabin CO₂, noise, lighting schedule, microbe swab, temperature and pressure |
+| Blood vessels & liver | Blood sugar & immunity | Fasting blood sugar, temperature |
+| Skeleton | Bones, muscles & balance | Exercise today, estimated bone loss without exercise, balance (nausea = possible space motion sickness), back pain |
 | Chest dosimeter | Radiation exposure | Career dose, projected end-of-mission dose, dose rate now |
 
 **Body system card.** For the selected part: colour-rated readings, the related spaceflight hazard, *Why it matters in space*, *What you can do*, a red box *Involve the flight surgeon* with the thresholds that need medical attention, and a link to the NASA HRP or CSA source.
 
-**Daily check-in.** Blood pressure (mmHg), heart rate (bpm; **📷** measures it with the camera), fasting blood sugar (mg/dL), body temperature (°C), sleep last night (hours), mood (five faces) and symptoms (headache, blurred vision, back pain, nausea). Saving rates every value and gives +50 XP. A red result is **sent to the flight surgeons on Earth** (logged by Guardian and queued with the 14 min 32 s light-time delay); amber results point to the body parts to open. **Fill example** enters sample values for demos.
+**Daily check-in.** Blood pressure (mmHg), heart rate (bpm; **📷** measures it with the camera), fasting blood sugar (mg/dL), body temperature (°C), sleep last night (hours), mood (five faces), teamwork today (1–5) and symptoms (headache, blurred vision, back pain, nausea). Saving rates every value and gives +50 XP. A red result is **sent to the flight surgeons on Earth** (logged by Guardian and queued with the 14 min 32 s light-time delay); amber results point to the body parts to open. **Fill example** enters sample values for demos.
 
 **Today's plan.** Morning check-in (ticked automatically), 2 h exercise, 2.5 L of water, weekly vision check, 15 min with family or crew, an 8-hour sleep window; each gives XP. Reminders appear from the mission clock (morning check-in due, exercise not logged, sleep window). **Badges:** 7-day streak, Bone guardian (exercise 5 of 7 days), Sleep champion (7-day average ≥ 7 h), Storm-ready (sheltered during a storm), Level 3.
 
 **My trends · last 14 days.** Sleep, systolic blood pressure, blood sugar and mood, each point coloured by status. Earlier days are a simulated sample history; today is the astronaut's own entry.
 
-**5 hazards of human spaceflight.** Live status for radiation (career dose, dose rate), isolation and confinement (mood, sleep), distance from Earth (link delay, autonomy), gravity fields (exercise) and hostile closed environment (cabin CO₂), linked to NASA HRP.
+**5 hazards of human spaceflight.** Live status for radiation (career dose, dose rate), isolation and confinement (mood, sleep, teamwork), distance from Earth (link delay, autonomy), gravity fields (exercise, balance) and hostile closed environment (cabin CO₂, noise, lighting), linked to NASA HRP.
+
+**Hazards adding up.** NASA notes that the five hazards "can feed off one another". When they combine for the selected astronaut, an amber box appears above the hazards and Guardian logs a warning: poor sleep + high cabin CO₂ (postpone safety-critical tasks), radiation storm + spacewalk (get into the shelter), Earth link lost + low mood, little sleep + team tension, no exercise + balance problems, little sleep + radiation storm.
 
 ## 6. Mission control: tour of the interface
 
@@ -126,7 +129,7 @@ Choose the astronaut at the top. The bar shows **XP and level**, the **check-in 
 
 **Cabin environment.** CO₂ (green below 3,000 ppm, amber above, red above 4,000), O₂, pressure, temperature, active CO₂ scrubber and its efficiency.
 
-**Deep-space habitat · live radiation map** (**3D** or **2D**). A glass hull with crew quarters (HAB), laboratory (LAB), the **storm shelter** with a 20 g/cm² water wall, airlock and the EVA worksite outside, each with its live dose rate; solar arrays, antenna and the two **ECLSS CO₂ scrubbers** (*STANDBY*, *ACTIVE*, pulsing red *FAULT*, *OFFLINE · INSPECT*). The four astronauts are animated 3D figures: they walk between modules, float on a tether during a spacewalk, and show a ring when selected (pulsing red on ALERT). Violet galactic cosmic rays pass through everything; during a storm amber solar protons stream from the Sun and stop at the water wall, and module floors turn red with dose. Drag to rotate, scroll to zoom, click an astronaut to open their telemetry, double-click to reset. Without WebGL or internet the 2D map is shown.
+**Deep-space habitat · live radiation map** (**3D** or **2D**). An ISS-style station in orbit around Mars (consistent with the 14 min 32 s light time): white semi-transparent modules with crew quarters (HAB), laboratory (LAB), the **storm shelter** with a 20 g/cm² water wall, airlock and the EVA worksite outside, each with its live dose rate; large gold solar wings on a truss, white radiators, an antenna and the two **ECLSS CO₂ scrubbers** (*STANDBY*, *ACTIVE*, pulsing red *FAULT*, *OFFLINE · INSPECT*). The four astronauts wear realistic spacesuits (gold sun visor, helmet lights, life-support backpack, chest control module, and stripes in their crew colour, as real NASA suits use stripes to tell astronauts apart): they walk between modules, float on a tether during a spacewalk, and show a ring when selected (pulsing red on ALERT). Violet galactic cosmic rays pass through everything; during a storm amber solar protons stream from the Sun and stop at the water wall, and module floors turn red with dose. Drag to rotate, scroll to zoom, click an astronaut to open their telemetry, double-click to reset. Without WebGL or internet the 2D map is shown.
 
 **Physiological telemetry.** For the selected astronaut: live ECG (lead II, 25 mm/s), heart rate, SpO₂, HRV and dose-rate trends against the personal baseline, and the context (rest, moving, EVA exertion, irregular rhythm).
 
@@ -195,7 +198,7 @@ Guardian is the decision engine inside the app. It is deliberately **explainable
 
 ## 10. Live heart sensor: measuring a real person
 
-The crew is simulated; the live heart sensor is not. It measures the person in front of the camera, from **♥ Live heart sensor — guest** in Mission control or **📷** in the My health check-in.
+The crew is simulated; the live heart sensor is not. It measures the person in front of the camera, from **♥ Live heart sensor — guest** in Mission control or **📷** in the Astronaut health check-in.
 
 ### Principle: photoplethysmography (PPG)
 
@@ -324,11 +327,13 @@ Medical records made by an autonomous system must be trustworthy afterwards: if 
 ## 14. Honest limitations
 
 - **Simulated crew and ship.** Crew vitals, ECGs, cabin air and the ship are simulated. Space weather is simulated unless **Live · NOAA** is on. In the DONKI replay only the event timing is real; proton intensity is modelled.
-- **Sample history.** In My health, the 13 days before today are a simulated sample; only today's check-in is entered by the user. Check-ins are kept in memory and reset on reload.
+- **Sample history.** In Astronaut health, the 13 days before today are a simulated sample; only today's check-in is entered by the user. Check-ins are kept in memory and reset on reload.
 - **Not medical advice.** Reference ranges are general adult values, simplified for illustration; a real system would use each astronaut's medical baseline and flight-surgeon protocols.
 - **Prototype decision logic.** Guardian uses explainable rules and statistics, not a trained machine-learning model. Confidence values are fixed per scenario.
 - **Live sensor is a demonstration, not a medical device.** Motion, poor or flickering light, cold fingers and camera auto-exposure reduce accuracy; HRV from a 30 fps camera is a rough estimate; arrhythmias cannot be reliably detected this way.
 - **Internet needed for 3D and real data.** three.js loads from a CDN; NOAA and NASA data are fetched online. Offline, the app falls back to 2D and the simulation.
+- **Simulated cabin extras.** Cabin noise and the microbe swab result are simulated; lighting follows the mission clock.
+- **Stylised anatomy.** The 3D body is a simplified teaching model built from shapes, not a medical-grade anatomy atlas.
 - **Ledger** is a hash chain without signatures (see section 12).
 - **Fictional crew.** Names and personal data are invented.
 
@@ -345,7 +350,7 @@ Medical records made by an autonomous system must be trustworthy afterwards: if 
 ## 16. Technical overview
 
 - **One file**, `index.html`: HTML, CSS and plain JavaScript, no framework, no build step, no backend.
-- **3D:** three.js r128 (from cdnjs) with WebGL for the habitat and the body; automatic 2D fallback.
+- **3D:** three.js r128 (from cdnjs) with WebGL for the habitat (procedural Mars texture, fresnel atmosphere) and the anatomy model (fresnel x-ray skin shader, layered meshes, HTML labels with SVG leader lines); automatic 2D fallback.
 - **Rendering:** SVG for the 2D map, Canvas for the Sun, ECG, trends and pulse waves.
 - **Data:** `fetch` to NOAA SWPC JSON feeds and NASA DONKI (api.nasa.gov); the NASA key is kept only in the browser's localStorage.
 - **Browser APIs:** Web Crypto (SHA-256), MediaDevices / getUserMedia (camera), Web Audio (alarm tones), Speech Synthesis (voice alerts).
