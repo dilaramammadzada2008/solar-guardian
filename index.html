@@ -187,9 +187,19 @@ main{display:grid;grid-template-columns:300px minmax(0,1fr) 370px;gap:14px;paddi
 .hvgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 @media(max-width:1250px){.hvgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){.hvgrid{grid-template-columns:minmax(0,1fr)}}
-.bodywrap{position:relative;height:340px;border-radius:10px;overflow:hidden;background:radial-gradient(260px 220px at 50% 40%,#10203f,#050913)}
+.bodywrap{position:relative;height:440px;border-radius:10px;overflow:hidden;background:radial-gradient(300px 280px at 50% 45%,#13284a,#060a14 75%)}
 #body3d{position:absolute;inset:0;cursor:grab}
 #body3d canvas{display:block;width:100%;height:100%}
+#bodyLab{position:absolute;inset:0;pointer-events:none}
+.blines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.blines line{stroke-width:1.2;opacity:.85}
+.blab{position:absolute;left:0;top:0;pointer-events:auto;display:flex;gap:6px;align-items:center;font:600 11px 'Space Grotesk',sans-serif;color:#dfe7f7;background:rgba(8,13,26,.82);border:1px solid #2a3b60;border-radius:7px;padding:4px 8px;cursor:pointer;white-space:nowrap}
+.blab:hover{border-color:#4fd1ff}
+.blab.on{border-color:var(--cy);box-shadow:0 0 0 1px rgba(79,209,255,.3)}
+.blab:focus-visible{outline:2px solid var(--cy)}
+.layers{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);display:flex;gap:4px;background:rgba(8,13,26,.75);border:1px solid var(--line);border-radius:8px;padding:3px}
+.layers button{font:11px 'Space Grotesk',sans-serif;color:var(--mut);background:transparent;border:0;border-radius:6px;padding:4px 8px;cursor:pointer}
+.layers button.on{color:var(--txt);background:rgba(79,209,255,.16)}
 .bodyhint{position:absolute;left:10px;bottom:8px;font-size:10px;color:#56658a;pointer-events:none}
 .syslist{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .syslist button{display:flex;gap:6px;align-items:center;font-size:11.5px;padding:5px 9px}
@@ -214,9 +224,10 @@ main{display:grid;grid-template-columns:300px minmax(0,1fr) 370px;gap:14px;paddi
 .bp{display:flex;gap:5px;align-items:center;color:var(--mut)}
 .bp .btn{padding:6px 8px}
 .cimood{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--mut)}
-#ciMood{display:flex;gap:4px}
-#ciMood button{flex:1;font-size:18px;padding:4px 0;background:#0e1830;border:1px solid var(--line);border-radius:7px;cursor:pointer}
-#ciMood button.on{border-color:var(--cy);background:rgba(79,209,255,.15)}
+#ciMood,#ciTeam{display:flex;gap:4px}
+#ciTeam button{font-size:13px;font-family:'JetBrains Mono',monospace;color:var(--txt)}
+#ciMood button,#ciTeam button{flex:1;font-size:18px;padding:4px 0;background:#0e1830;border:1px solid var(--line);border-radius:7px;cursor:pointer}
+#ciMood button.on,#ciTeam button.on{border-color:var(--cy);background:rgba(79,209,255,.15)}
 .cisym{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:10px;font-size:12px;color:#c9d4ec;align-items:center}
 .cisym>span{width:100%;font-size:11.5px;color:var(--mut)}
 .cibtn{display:flex;gap:8px;margin-top:12px}
@@ -238,6 +249,9 @@ main{display:grid;grid-template-columns:300px minmax(0,1fr) 370px;gap:14px;paddi
 .haz{display:flex;gap:10px;align-items:flex-start;padding:9px 10px;border-radius:9px;background:#0b1222;margin-bottom:6px;border-left:3px solid var(--mut)}
 .haz.ok{border-left-color:var(--gr)}.haz.warn{border-left-color:var(--am)}.haz.bad{border-left-color:var(--rd)}
 .haz .hi{font-size:18px;line-height:1}
+.combo{border:1px solid rgba(255,181,71,.5);border-radius:10px;padding:8px 8px 2px;margin-bottom:10px;background:rgba(255,181,71,.05)}
+.combot{font-size:12px;font-weight:600;color:var(--am);margin:0 2px 7px;display:flex;flex-wrap:wrap;gap:6px;align-items:baseline}
+.combot span{font-weight:400;font-size:10.5px;color:var(--mut);font-style:italic}
 .haz b{display:block;font-size:12.5px}
 .haz span{font-size:11.5px;color:var(--mut)}
 .evtag{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:1px;color:var(--am);text-transform:uppercase}
@@ -257,7 +271,7 @@ main{display:grid;grid-template-columns:300px minmax(0,1fr) 370px;gap:14px;paddi
     <svg width="30" height="30" viewBox="0 0 30 30"><defs><radialGradient id="lg" cx=".4" cy=".4"><stop offset="0" stop-color="#fff3c4"/><stop offset=".55" stop-color="#ffb547"/><stop offset="1" stop-color="#ff6a1f"/></radialGradient></defs><circle cx="15" cy="15" r="8" fill="url(#lg)"/><path d="M15 3a12 12 0 0 1 0 24" fill="none" stroke="#4fd1ff" stroke-width="2.2" stroke-linecap="round"/><path d="M15 27a12 12 0 0 1-9.5-4.7" fill="none" stroke="#4fd1ff" stroke-width="2.2" stroke-linecap="round" opacity=".5"/></svg>
     <div>SOLAR GUARDIAN<small>Autonomous crew health · space-weather AI</small></div>
   </div>
-  <div class="seg vtabs" role="tablist"><button class="btn on" id="tabMission" role="tab">🛰 Mission control</button><button class="btn" id="tabHealth" role="tab">🧑‍🚀 My health</button></div>
+  <div class="seg vtabs" role="tablist"><button class="btn on" id="tabMission" role="tab">Mission control</button><button class="btn" id="tabHealth" role="tab">Astronaut health</button></div>
   <div class="hstat">Mission clock<b id="hClock">—</b></div>
   <div class="hstat">Earth link · one-way<b id="hLink">—</b></div>
   <div class="hstat">Space weather<b id="hWx">—</b></div>
@@ -390,7 +404,7 @@ main{display:grid;grid-template-columns:300px minmax(0,1fr) 370px;gap:14px;paddi
   <div class="hvgrid">
     <section class="panel">
       <div class="ph"><h3>My body · tap a part</h3><span class="chip" id="hvOverall">—</span></div>
-      <div class="bodywrap"><div id="body3d"></div><div class="bodyhint">drag to turn · click a body part</div></div>
+      <div class="bodywrap"><div id="body3d"><div id="bodyLab"></div></div><div class="layers" id="bodyLayers"><button type="button" class="on" data-l="skin">Skin</button><button type="button" class="on" data-l="bones">Skeleton</button><button type="button" class="on" data-l="organs">Organs</button><button type="button" class="on" data-l="vessels">Vessels</button></div><div class="bodyhint">drag to turn · scroll to zoom · click an organ or label</div></div>
       <div class="syslist" id="sysList"></div>
     </section>
     <section class="panel" id="sysCard"></section>
@@ -404,6 +418,7 @@ main{display:grid;grid-template-columns:300px minmax(0,1fr) 370px;gap:14px;paddi
           <label>Body temperature <small>°C</small><input id="ciTemp" type="number" step="0.1" min="33" max="42" placeholder="36.7"></label>
           <label>Sleep last night <small>hours</small><input id="ciSleep" type="number" step="0.5" min="0" max="16" placeholder="7.5"></label>
           <div class="cimood"><span>Mood</span><div id="ciMood"></div></div>
+          <div class="cimood"><span>Teamwork today</span><div id="ciTeam"></div></div>
         </div>
         <div class="cisym"><span>Symptoms today</span>
           <label><input type="checkbox" id="sHead"> Headache</label><label><input type="checkbox" id="sVis"> Blurred vision</label>
@@ -1335,15 +1350,27 @@ window.H3D=(()=>{
   // stars
   {const n=1100,a=new Float32Array(n*3);for(let i=0;i<n;i++){const u=Math.random()*2-1,t=Math.random()*6.283,r=58+Math.random()*12,s=Math.sqrt(1-u*u);a[i*3]=r*s*Math.cos(t);a[i*3+1]=r*u;a[i*3+2]=r*s*Math.sin(t);}
    const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(a,3));scene.add(new T.Points(g,new T.PointsMaterial({color:0xffffff,size:.13,transparent:true,opacity:.8,fog:false})));}
+  // the planet below: Mars (the mission is at Mars distance: 14 min 32 s light time)
+  const marsTex=ctex(1024,512,(x,w,h)=>{x.fillStyle='#a2492a';x.fillRect(0,0,w,h);
+    const rnd=(a,b)=>a+Math.random()*(b-a),cols=['#7d3520','#b75b34','#8c3c22','#c4703f','#6a2d1b','#d08050'];
+    for(let i=0;i<900;i++){x.globalAlpha=rnd(.04,.16);x.fillStyle=cols[i%cols.length];x.beginPath();x.ellipse(rnd(0,w),rnd(0,h),rnd(10,120),rnd(6,50),rnd(0,3),0,7);x.fill();}
+    x.globalAlpha=.55;x.strokeStyle='#4f2013';x.lineWidth=7;x.beginPath();x.moveTo(w*.42,h*.53);x.bezierCurveTo(w*.5,h*.5,w*.56,h*.56,w*.64,h*.52);x.stroke();
+    for(let i=0;i<260;i++){const cx=rnd(0,w),cy=rnd(h*.08,h*.92),r=rnd(2,14);x.globalAlpha=.35;x.fillStyle='#5a2616';x.beginPath();x.arc(cx,cy,r,0,7);x.fill();x.globalAlpha=.25;x.strokeStyle='#e0a070';x.lineWidth=1.5;x.beginPath();x.arc(cx-r*.15,cy-r*.15,r,3.6,5.6);x.stroke();}
+    x.globalAlpha=1;for(const [y0,y1] of [[0,h*.07],[h,h*.93]]){const g=x.createLinearGradient(0,y0,0,y1);g.addColorStop(0,'rgba(250,245,240,.95)');g.addColorStop(1,'rgba(250,245,240,0)');x.fillStyle=g;x.fillRect(0,Math.min(y0,y1),w,Math.abs(y1-y0));}});
+  const mars=new T.Mesh(new T.SphereGeometry(26,64,48),new T.MeshStandardMaterial({map:marsTex,roughness:.95,metalness:0,fog:false}));
+  mars.position.set(4,-33,-9);mars.rotation.set(.35,0,.15);scene.add(mars);
+  const glowM=new T.ShaderMaterial({uniforms:{c:{value:new T.Color(0xff9a5a)}},vertexShader:'varying vec3 vN;varying vec3 vV;void main(){vN=normalize(normalMatrix*normal);vec4 mv=modelViewMatrix*vec4(position,1.);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}',
+    fragmentShader:'uniform vec3 c;varying vec3 vN;varying vec3 vV;void main(){float f=pow(1.-max(dot(vN,vV),0.),3.);gl_FragColor=vec4(c,f*.55);}',transparent:true,blending:T.AdditiveBlending,depthWrite:false,side:T.BackSide,fog:false});
+  const marsGlow=new T.Mesh(new T.SphereGeometry(26.9,64,48),glowM);marsGlow.position.copy(mars.position);scene.add(marsGlow);
   // the Sun (left, as on the 2D map)
   const sunTex=ctex(256,256,(x,w,h)=>{const g=x.createRadialGradient(128,128,8,128,128,128);g.addColorStop(0,'rgba(255,252,230,1)');g.addColorStop(.16,'rgba(255,205,95,1)');g.addColorStop(.38,'rgba(255,140,40,.5)');g.addColorStop(1,'rgba(255,100,20,0)');x.fillStyle=g;x.fillRect(0,0,w,h);});
   const sunSpr=new T.Sprite(new T.SpriteMaterial({map:sunTex,transparent:true,depthWrite:false,blending:T.AdditiveBlending,fog:false}));sunSpr.position.set(-9.4,2.3,-1.5);sunSpr.scale.set(5.5,5.5,1);scene.add(sunSpr);
   // hull: glass cylinder with ribs
   const hx0=P(100,0).x,hx1=P(710,0).x,R=1.34,hcx=(hx0+hx1)/2,hlen=hx1-hx0-1.0;
-  const glass=M(0x86aaff,{transparent:true,opacity:.07,side:T.DoubleSide,depthWrite:false,roughness:.1,metalness:.5});
+  const glass=M(0xe9eef6,{transparent:true,opacity:.17,side:T.DoubleSide,depthWrite:false,roughness:.45,metalness:.35});
   const hull=new T.Mesh(new T.CylinderGeometry(R,R,hlen,48,1,true),glass);hull.rotation.z=Math.PI/2;hull.position.set(hcx,.05,0);scene.add(hull);
   for(const s of [-1,1]){const cap=new T.Mesh(new T.SphereGeometry(R,32,16,0,Math.PI*2,0,Math.PI/2),glass);cap.rotation.z=-s*Math.PI/2;cap.scale.set(1,.5,1);cap.position.set(hcx+s*hlen/2,.05,0);scene.add(cap);}
-  const ribM=new T.MeshStandardMaterial({color:0x3a5288,emissive:0x1a2a52,emissiveIntensity:.6,roughness:.5,metalness:.5});
+  const ribM=new T.MeshStandardMaterial({color:0xcfd7e4,emissive:0x1c2842,emissiveIntensity:.35,roughness:.4,metalness:.6});
   for(let x=hx0+.5;x<=hx1-.4;x+=1.15){const rib=new T.Mesh(new T.TorusGeometry(R,.025,6,56),ribM);rib.rotation.y=Math.PI/2;rib.position.set(x,.05,0);scene.add(rib);}
   {const sp=new T.Mesh(new T.CylinderGeometry(.035,.035,hlen,8),ribM);sp.rotation.z=Math.PI/2;sp.position.set(hcx,.05+R,0);scene.add(sp);}
   const deck=new T.Mesh(new T.BoxGeometry(hlen+.6,.04,2.3),M(0x0b1426));deck.position.set(hcx,FLOOR-.04,0);scene.add(deck);
@@ -1372,10 +1399,15 @@ window.H3D=(()=>{
     lab('mod',m.label,new T.Vector3(c.x,FLOOR+H+.35,c.z-d/2));
     mods[k].dose=lab('dose','',new T.Vector3(c.x,FLOOR+.08,c.z+d/2+.02));
   }
-  // solar arrays
-  const solTex=ctex(256,96,(x,w,h)=>{x.fillStyle='#0d2246';x.fillRect(0,0,w,h);x.strokeStyle='#2c4f92';x.lineWidth=2;for(let i=0;i<=8;i++){x.beginPath();x.moveTo(i*w/8,0);x.lineTo(i*w/8,h);x.stroke();}for(let j=0;j<=3;j++){x.beginPath();x.moveTo(0,j*h/3);x.lineTo(w,j*h/3);x.stroke();}});
-  for(const s of [-1,1]){const pan=new T.Mesh(new T.BoxGeometry(3,.03,1.12),[M(0x1b2a4a),M(0x1b2a4a),new T.MeshStandardMaterial({map:solTex,metalness:.6,roughness:.35,emissive:0x1a3a7a,emissiveIntensity:.9}),M(0x1b2a4a),M(0x1b2a4a),M(0x1b2a4a)]);
-    pan.position.set(P(375,0).x,.35,s*2.15);scene.add(pan);const st=new T.Mesh(new T.CylinderGeometry(.03,.03,.9,6),ribM);st.rotation.x=Math.PI/2;st.position.set(P(375,0).x,.35,s*1.55);scene.add(st);}
+  // ISS-style solar wings on a truss behind the station, and white radiators
+  const solTex=ctex(128,512,(x,w,h)=>{x.fillStyle='#1d1608';x.fillRect(0,0,w,h);for(let i=0;i<4;i++)for(let j=0;j<16;j++){const g=x.createLinearGradient(0,j*h/16,0,(j+1)*h/16);g.addColorStop(0,'#c9952e');g.addColorStop(1,'#7a5418');x.fillStyle=g;x.fillRect(i*w/4+2,j*h/16+2,w/4-4,h/16-4);}});
+  const trussZ0=-1.3,trussZ1=-7.2,tx=P(375,0).x;
+  {const tr=new T.Mesh(new T.BoxGeometry(.16,.16,trussZ0-trussZ1),ribM);tr.position.set(tx,.45,(trussZ0+trussZ1)/2);scene.add(tr);
+   const tr2=edges(new T.BoxGeometry(.3,.3,trussZ0-trussZ1),0x9aa6bf,.8);tr2.position.copy(tr.position);scene.add(tr2);}
+  const wingM=[M(0x2a2210),M(0x2a2210),new T.MeshStandardMaterial({map:solTex,metalness:.55,roughness:.35,emissive:0x2a1a05,emissiveIntensity:.6}),M(0x1a1408),M(0x2a2210),M(0x2a2210)];
+  for(const xo of [-1.05,1.05]){const wing=new T.Mesh(new T.BoxGeometry(1.15,.025,5.4),wingM);wing.position.set(tx+xo,.45,(trussZ0+trussZ1)/2-.2);wing.rotation.z=xo*.18;scene.add(wing);
+    const mast=new T.Mesh(new T.CylinderGeometry(.018,.018,5.4,6),ribM);mast.rotation.x=Math.PI/2;mast.position.set(tx+xo,.47,(trussZ0+trussZ1)/2-.2);scene.add(mast);}
+  for(const zz of [-2.1,-3.1]){const rad=new T.Mesh(new T.BoxGeometry(.9,.02,.85),M(0xf4f6fa,{roughness:.6,emissive:0x1a2030,emissiveIntensity:.3}));rad.position.set(P(560,0).x,.9,zz);rad.rotation.x=.25;scene.add(rad);}
   // antenna
   {const mast=new T.Mesh(new T.CylinderGeometry(.03,.03,.8,6),ribM);mast.position.set(hx1-.2,.05+R+.35,0);scene.add(mast);
    const dish=new T.Mesh(new T.SphereGeometry(.42,24,10,0,Math.PI*2,0,.62),M(0xc3cde2,{side:T.DoubleSide,metalness:.6,roughness:.3}));dish.position.set(hx1+.05,.05+R+.85,0);dish.rotation.z=-1.1;scene.add(dish);}
@@ -1389,21 +1421,29 @@ window.H3D=(()=>{
   // astronauts
   const pick=[];
   function astro(c){
-    const g=new T.Group(),suit=M(0xe9eef7,{roughness:.55}),acc=M(c.color,{emissive:c.color,emissiveIntensity:.35});
-    const hip=new T.Group();hip.position.y=.34;g.add(hip);
+    const g=new T.Group(),suit=M(0xf2f4f7,{roughness:.85}),soft=M(0xdfe4ec,{roughness:.9}),gray=M(0x9aa3b4,{roughness:.6,metalness:.3}),acc=M(c.color,{emissive:c.color,emissiveIntensity:.35});
+    const gold=new T.MeshStandardMaterial({color:0xd8a43a,metalness:1,roughness:.12,emissive:0x3a2600,emissiveIntensity:.5});
+    const hip=new T.Group();hip.position.y=.36;g.add(hip);
     const add=(geo,mat,x,y,z,parent=hip)=>{const m=new T.Mesh(geo,mat);m.position.set(x,y,z);m.userData.idx=c.idx;pick.push(m);parent.add(m);return m;};
-    add(new T.BoxGeometry(.24,.3,.15),suit,0,.17,0);add(new T.BoxGeometry(.245,.06,.155),acc,0,.22,0);
-    add(new T.BoxGeometry(.2,.25,.09),M(0xc5cee0),0,.17,-.12);
-    add(new T.SphereGeometry(.11,18,14),suit,0,.43,0);
-    const vis=add(new T.SphereGeometry(.085,18,14),M(0x16243f,{metalness:.9,roughness:.08,emissive:c.color,emissiveIntensity:.2}),0,.43,.05);vis.scale.set(1,.78,.62);
-    const limb=(px,py,len,r)=>{const p=new T.Group();p.position.set(px,py,0);hip.add(p);add(new T.CylinderGeometry(r,r*.9,len,8),suit,0,-len/2,0,p);return p;};
-    const aL=limb(-.15,.3,.26,.038),aR=limb(.15,.3,.26,.038),lL=limb(-.065,0,.32,.05),lR=limb(.065,0,.32,.05);
-    add(new T.SphereGeometry(.035,8,6),acc,0,-.28,0,aL);add(new T.SphereGeometry(.035,8,6),acc,0,-.28,0,aR);
-    add(new T.BoxGeometry(.08,.05,.13),M(0x9aa6bf),0,-.34,.02,lL);add(new T.BoxGeometry(.08,.05,.13),M(0x9aa6bf),0,-.34,.02,lR);
+    add(new T.CylinderGeometry(.15,.13,.34,16),suit,0,.18,0);                                   // hard upper torso
+    add(new T.BoxGeometry(.13,.08,.06),gray,0,.2,.13);                                            // chest display & control module
+    add(new T.BoxGeometry(.03,.03,.02),acc,.035,.2,.165);                                          // status light in crew colour
+    add(new T.BoxGeometry(.28,.34,.14),soft,0,.2,-.17);                                            // life-support backpack
+    add(new T.BoxGeometry(.2,.06,.15),gray,0,.39,-.17);
+    for(const s of [-1,1])add(new T.SphereGeometry(.07,12,10),suit,s*.16,.31,0);                  // shoulders
+    add(new T.SphereGeometry(.135,22,18),suit,0,.5,0);                                             // helmet shell
+    const vis=add(new T.SphereGeometry(.112,22,18,0,Math.PI*2,0,Math.PI*.62),gold,0,.5,.035);vis.rotation.x=Math.PI/2.2;   // gold sun visor
+    for(const s of [-1,1])add(new T.CylinderGeometry(.018,.018,.05,8),gray,s*.1,.58,.05).rotation.x=Math.PI/2;           // helmet lights
+    const limb=(px,py,len,r,stripe)=>{const p=new T.Group();p.position.set(px,py,0);hip.add(p);add(new T.CylinderGeometry(r,r*.88,len,12),suit,0,-len/2,0,p);
+      add(new T.TorusGeometry(r*1.02,.008,6,18),gray,0,-len*.5,0,p).rotation.x=Math.PI/2;
+      if(stripe)add(new T.TorusGeometry(r*1.04,.014,6,18),acc,0,-len*.22,0,p).rotation.x=Math.PI/2;return p;};
+    const aL=limb(-.2,.3,.28,.045,true),aR=limb(.2,.3,.28,.045,true),lL=limb(-.075,0,.34,.064,true),lR=limb(.075,0,.34,.064,true);
+    add(new T.SphereGeometry(.042,10,8),gray,0,-.3,0,aL);add(new T.SphereGeometry(.042,10,8),gray,0,-.3,0,aR);   // gloves
+    add(new T.BoxGeometry(.1,.07,.16),soft,0,-.37,.025,lL);add(new T.BoxGeometry(.1,.07,.16),soft,0,-.37,.025,lR); // boots
     const ringMat=new T.MeshBasicMaterial({color:c.color,transparent:true,opacity:0,side:T.DoubleSide,depthWrite:false});
     const ring=new T.Mesh(new T.RingGeometry(.22,.29,36),ringMat);ring.rotation.x=-Math.PI/2;ring.position.y=.01;g.add(ring);
     const tether=new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(),new T.Vector3()]),new T.LineBasicMaterial({color:0xffd27a,transparent:true,opacity:.8}));tether.visible=false;tether.frustumCulled=false;scene.add(tether);
-    g.scale.setScalar(1);scene.add(g);
+    g.scale.setScalar(1.05);scene.add(g);
     return {g,hip,aL,aR,lL,lR,ring,ringMat,tether,phase:Math.random()*6,yaw:0,p:null,label:lab('crew',c.id,new T.Vector3())};
   }
   const A=CREW.map(c=>{const a=astro(c);a.label.el.style.color=c.color;return a;});
@@ -1484,7 +1524,7 @@ window.H3D=(()=>{
       a.tether.visible=onEva||(c.hop&&(c.hop.to==='eva'||c.hop.from==='eva'));
       if(a.tether.visible){const pts=a.tether.geometry.attributes.position;pts.setXYZ(0,airlockDoor.x,airlockDoor.y,airlockDoor.z);pts.setXYZ(1,w.x,FLOOR+.45+fl,w.z);pts.needsUpdate=true;}
       a.label.pos.set(w.x,FLOOR+1.0+fl,w.z);a.label.el.classList.toggle('alert',alert);});
-    stepParticles();placeCam();renderer.render(scene,cam);
+    mars.rotation.y+=dt*.01;stepParticles();placeCam();renderer.render(scene,cam);
     const W=host.clientWidth,Hh=host.clientHeight;labels.forEach(L=>project(L,W,Hh));
   };
   function setOn(on){api.on=on;wrap.classList.toggle('is3d',on);$('#v3d').classList.toggle('on',on);$('#v2d').classList.toggle('on',!on);if(on)requestAnimationFrame(size);}
@@ -1507,6 +1547,7 @@ const HV=(()=>{
     temp:t=>t==null?null:t>=38?['bad','Fever']:t>=37.3?['warn','Slightly raised']:t<35.5?['bad','Too low']:['ok','Normal'],
     sleep:h=>h==null?null:h<6?['bad','Too short']:h<7?['warn','Short']:h<=9?['ok','Good']:['warn','Long'],
     mood:m=>m==null?null:m<=2?['bad','Low']:m===3?['warn','So-so']:['ok','Good'],
+    team:m=>m==null?null:m<=2?['bad','Tense']:m===3?['warn','OK']:['ok','Good'],
     hr:h=>h==null?null:h>120?['bad','Very high']:h>100?['warn','High']:h<50?['warn','Low']:['ok','Normal'],
     spo2:v=>v<90?['bad','Low']:v<94?['warn','Slightly low']:['ok','Normal'],
     cog:v=>v<70?['bad','Reduced']:v<85?['warn','Slightly reduced']:['ok','Normal']};
@@ -1531,18 +1572,18 @@ const HV=(()=>{
       why:'Fluids shifting toward the head can change the eye and optic nerve. NASA calls this SANS (spaceflight-associated neuro-ocular syndrome) and monitors crews on long missions for it.',
       act:['Do the weekly vision check (reading chart)','Report blurred near vision or new headaches'],
       call:'New blurred vision, blind spots or a headache that does not go away, on the same day.',src:['NASA HRP · Risks of human spaceflight',HRP_RISKS]},
-    lungs:{short:'Lungs',icon:'🫁',name:'Lungs & cabin air',hazard:'Hostile closed environment',
-      why:'The cabin is a closed environment. If a CO₂ scrubber degrades, CO₂ builds up and can cause headaches and slower thinking for the whole crew.',
-      act:['Check cabin CO₂ on the Mission control tab','Reduce exertion while CO₂ is high'],
-      call:'Blood oxygen below 92% or difficulty breathing.',src:['NASA HRP · 5 hazards of human spaceflight',HRP_HAZ]},
+    lungs:{short:'Cabin',icon:'💨',name:'Lungs & cabin environment',hazard:'Hostile closed environment',
+      why:'The spacecraft is a closed ecosystem. NASA lists temperature, pressure, lighting, noise and microbes among the things that must be kept safe. If a CO₂ scrubber degrades, CO₂ builds up and causes headaches and slower thinking for the whole crew; constant noise and the wrong light at night disturb sleep.',
+      act:['Check cabin CO₂ on the Mission control tab and reduce exertion while it is high','Use hearing protection near loud equipment','Follow the lighting schedule: bright cool light by day, warm dim light before sleep','Keep surfaces clean; microbe samples are taken weekly'],
+      call:'Blood oxygen below 92%, difficulty breathing, or ringing in the ears after loud noise.',src:['NASA HRP · 5 hazards of human spaceflight',HRP_HAZ]},
     blood:{short:'Blood',icon:'🩸',name:'Blood sugar & immunity',hazard:'Hostile closed environment · isolation',
       why:'Spaceflight changes the immune system (dormant viruses can reactivate) and can affect how the body handles sugar. In a small closed crew, a fever is worth catching early.',
       act:['Eat the planned meals; limit sugary snacks','Wash hands and report a fever early','Measure fasting blood sugar in the morning'],
       call:'Blood sugar below 70 or above 180 mg/dL, or a temperature of 38 °C or more.',src:['NASA HRP · Risks of human spaceflight',HRP_RISKS]},
-    bones:{short:'Bones',icon:'🦴',name:'Bones & muscles',hazard:'Gravity fields',
-      why:'Without gravity, bones and muscles are not loaded. Without exercise, astronauts can lose about 1–1.5% of bone density per month in weight-bearing bones, so ISS crews exercise about two hours a day.',
-      act:['Resistance exercise (squats, deadlifts) on the resistive device','Treadmill running with a harness','Drink water: calcium released from bone raises kidney-stone risk'],
-      call:'Back pain that does not ease, or any fall or injury.',src:['NASA HRP · 5 hazards of human spaceflight',HRP_HAZ]},
+    bones:{short:'Bones & balance',icon:'🦴',name:'Bones, muscles & balance',hazard:'Gravity fields',
+      why:'Without gravity, bones and muscles are not loaded: without exercise, astronauts can lose about 1–1.5% of bone density per month in weight-bearing bones, so ISS crews exercise about two hours a day. The inner ear, which controls balance, must adapt too: many astronauts feel space motion sickness in the first days, and they must readapt to gravity on the Moon, Mars and back on Earth.',
+      act:['Resistance exercise (squats, deadlifts) on the resistive device','Treadmill running with a harness','Drink water: calcium released from bone raises kidney-stone risk','In the first days, move your head slowly and report dizziness or nausea'],
+      call:'Back pain that does not ease, any fall or injury, or dizziness that affects your work.',src:['NASA HRP · 5 hazards of human spaceflight',HRP_HAZ]},
     rad:{short:'Radiation',icon:'☢️',name:'Radiation exposure',hazard:'Space radiation',
       why:'Galactic cosmic rays and solar storms raise long-term cancer risk and can affect other organs. NASA limits an astronaut career to 600 mSv.',
       act:['Follow Guardian\'s shelter orders during solar storms','Wear your personal dosimeter','Plan spacewalks when space weather is quiet'],
@@ -1553,15 +1594,29 @@ const HV=(()=>{
     let st='ok';
     if(k==='heart'){const hr=t.hr??Math.round(c.v.hr);st=worst(S('Heart rate',hr+' bpm'+(t.hr?'':' (wearable)'),R.hr(hr)),S('Blood pressure',t.sys?`${t.sys}/${t.dia} mmHg`:'—',R.bp(t.sys,t.dia)),
         c.flags.af?S('Rhythm','irregular (Guardian)',['bad','Check now']):S('Rhythm','regular (wearable ECG)',['ok','Normal']));}
-    if(k==='brain'){st=worst(S('Mood',t.mood?MOODS[t.mood-1]+' '+t.mood+'/5':'—',R.mood(t.mood)),S('Sleep',t.sleep!=null?t.sleep+' h':'—',R.sleep(t.sleep)),S('Cognition test',Math.round(c.v.cog)+'/100',R.cog(c.v.cog)),t.head?S('Headache','reported',['warn','Reported']):null);}
+    if(k==='brain'){st=worst(S('Mood',t.mood?MOODS[t.mood-1]+' '+t.mood+'/5':'—',R.mood(t.mood)),S('Sleep',t.sleep!=null?t.sleep+' h':'—',R.sleep(t.sleep)),S('Teamwork',t.team?t.team+'/5':'—',R.team(t.team)),S('Cognition test',Math.round(c.v.cog)+'/100',R.cog(c.v.cog)),t.head?S('Headache','reported',['warn','Reported']):null);}
     if(k==='eyes'){st=worst(t.vis?S('Blurred vision','reported',['warn','Possible SANS sign']):S('Blurred vision','none reported',['ok','Normal']),S('Weekly vision check',p.vision?'done today':'not done',p.vision?['ok','Done']:['warn','Due']));}
-    if(k==='lungs'){st=worst(S('Blood oxygen',c.v.spo2.toFixed(1)+' %',R.spo2(c.v.spo2)),S('Cabin CO₂',Math.round(env.co2)+' ppm',env.co2>4000?['bad','High']:env.co2>3000?['warn','Elevated']:['ok','Nominal']));}
-    if(k==='blood'){st=worst(S('Blood sugar',t.glu?t.glu+' mg/dL':'—',R.glu(t.glu)),S('Temperature',(t.temp??c.v.temp.toFixed(1))+' °C'+(t.temp?'':' (wearable)'),R.temp(t.temp??+c.v.temp.toFixed(1))),t.nau?S('Nausea','reported',['warn','Reported']):null);}
-    if(k==='bones'){const lossNo=(curDay()/30*1.25).toFixed(1);st=worst(S('Exercise today',p.exercise?'2 h done':'not logged',p.exercise?['ok','Done']:['warn','Due']),S('Bone loss if no exercise',`≈ ${lossNo}% by day ${curDay()}`,['ok','Info']),t.back?S('Back pain','reported',['warn','Reported']):null);}
+    if(k==='lungs'){const cb=cabin();st=worst(S('Blood oxygen',c.v.spo2.toFixed(1)+' %',R.spo2(c.v.spo2)),S('Cabin CO₂',Math.round(env.co2)+' ppm',env.co2>4000?['bad','High']:env.co2>3000?['warn','Elevated']:['ok','Nominal']),
+        S('Noise (sim)',cb.noise+' dBA',cb.noise>70?['bad','Loud']:cb.noise>60?['warn','Raised']:['ok','Quiet']),S('Lighting',cb.light,['ok','On schedule']),S('Microbes (sim)','weekly swab within limits',['ok','OK']),S('Temperature · pressure',`${env.temp.toFixed(1)} °C · ${env.press.toFixed(1)} kPa`,['ok','Nominal']));}
+    if(k==='blood'){st=worst(S('Blood sugar',t.glu?t.glu+' mg/dL':'—',R.glu(t.glu)),S('Temperature',(t.temp??c.v.temp.toFixed(1))+' °C'+(t.temp?'':' (wearable)'),R.temp(t.temp??+c.v.temp.toFixed(1))));}
+    if(k==='bones'){const lossNo=(curDay()/30*1.25).toFixed(1);st=worst(S('Exercise today',p.exercise?'2 h done':'not logged',p.exercise?['ok','Done']:['warn','Due']),S('Bone loss if no exercise',`≈ ${lossNo}% by day ${curDay()}`,['ok','Info']),
+        t.nau?S('Balance','nausea reported',['warn','Possible space motion sickness']):S('Balance','no dizziness or nausea',['ok','Normal']),t.back?S('Back pain','reported',['warn','Reported']):null);}
     if(k==='rad'){const pr=projected(c),now=c.rate;st=worst(S('Career dose',`${c.dose.toFixed(0)} / 600 mSv`,c.dose/600>.8?['warn','High']:['ok','Within limit']),S('Projected end of mission',pr.toFixed(0)+' mSv',pr>600?['bad','Over limit']:pr>540?['warn','Close to limit']:['ok','OK']),S('Dose rate now',now.toFixed(3)+' mSv/h',now>1?['bad','Storm']:now>.1?['warn','Raised']:['ok','Background']));}
     return {st,items};
   }
   const COL={ok:0x3ddc97,warn:0xffb547,bad:0xff5470};
+  // cabin environment extras (simulated): noise rises when a scrubber fan works hard; lighting follows the circadian schedule
+  function cabin(){const h=Math.floor((sim.sec%86400)/3600),noise=Math.round(57+3*Math.sin(sim.sec/5000)+(env.eff<.8?6:0));
+    return {noise,light:(h>=6&&h<20)?'daytime · bright cool white':(h>=20&&h<22)?'evening · warm, dimmed':'night · sleep lighting'};}
+  // NASA: hazards "can feed off one another" — detect combinations for this astronaut
+  function compound(){const c=CREW[who],m=ME[c.id],t=m.today||{},p=m.plan,L=[];
+    if(t.sleep!=null&&t.sleep<7&&env.co2>3000)L.push(['bad','Poor sleep + high cabin CO₂','Both slow down thinking. Postpone safety-critical tasks until CO₂ is back below 3,000 ppm.']);
+    if(speRate()>.05&&(c.eva||c.module==='eva'||c.module==='airlock'))L.push(['bad','Radiation storm + spacewalk','Get inside and into the storm shelter now.']);
+    if(sim.linkLost&&t.mood&&t.mood<=3)L.push(['warn','Earth link lost + low mood','Isolation feels stronger without contact with home. Spend time with the crew.']);
+    if(t.sleep!=null&&t.sleep<6&&t.team&&t.team<=2)L.push(['warn','Little sleep + team tension','Conflicts become more likely. Take a break and talk it through.']);
+    if(!p.exercise&&curDay()>90&&t.nau)L.push(['warn','No exercise + balance problems','Muscles and the inner ear both need daily training on a long mission.']);
+    if(t.sleep!=null&&t.sleep<6&&speRate()>.05)L.push(['warn','Little sleep + radiation storm','A stressful night in the shelter; plan a recovery sleep after the storm.']);
+    return L;}
   // ---------- UI rendering ----------
   function renderWho(){$('#hvWho').innerHTML=CREW.map((c,i)=>`<button class="btn ${i===who?'on':''}" data-w="${i}"><span class="dot" style="background:${c.color}"></span>${c.name.split(' ').slice(-2).join(' ').replace('Dr. ','')}</button>`).join('');}
   function level(xp){return 1+Math.floor(xp/250);}
@@ -1601,11 +1656,14 @@ const HV=(()=>{
   function renderHaz(){
     const c=CREW[who],m=ME[c.id],t=m.today||{};
     const H=[['☢️','Space radiation',`Career dose ${c.dose.toFixed(0)} of 600 mSv · now ${c.rate.toFixed(3)} mSv/h`,c.rate>1?'bad':projected(c)>540?'warn':'ok'],
-      ['🧠','Isolation & confinement',t.mood?`Mood today ${MOODS[t.mood-1]} · sleep ${t.sleep} h`:'Log mood and sleep in the check-in',t.mood?worst(R.mood(t.mood)[0],R.sleep(t.sleep)?.[0]):'warn'],
+      ['🧠','Isolation & confinement',t.mood?`Mood today ${MOODS[t.mood-1]} · sleep ${t.sleep??'—'} h · teamwork ${t.team??'—'}/5`:'Log mood, sleep and teamwork in the check-in',t.mood?worst(R.mood(t.mood)[0],R.sleep(t.sleep)?.[0],R.team(t.team)?.[0]):'warn'],
       ['📡','Distance from Earth',sim.linkLost?'Earth link lost: Guardian decides onboard':'Earth replies in 29 min at best: Guardian decides onboard',sim.linkLost?'warn':'ok'],
-      ['🦴','Gravity fields',m.plan.exercise?'Exercise done today: bones and muscles loaded':'Exercise not logged yet today',m.plan.exercise?'ok':'warn'],
-      ['🫁','Hostile closed environment',`Cabin CO₂ ${Math.round(env.co2)} ppm · scrubber ${env.scrubber}`,env.co2>4000?'bad':env.co2>3000?'warn':'ok']];
-    $('#hazList').innerHTML=H.map(([i,n,d,s])=>`<div class="haz ${s}"><span class="hi">${i}</span><div><b>${n}</b><span>${d}</span></div></div>`).join('');
+      ['🦴','Gravity fields',(m.plan.exercise?'Exercise done today':'Exercise not logged yet today')+(t.nau?' · nausea reported (balance)':''),worst(m.plan.exercise?'ok':'warn',t.nau?'warn':null)],
+      ['💨','Hostile closed environment',`Cabin CO₂ ${Math.round(env.co2)} ppm · noise ${cabin().noise} dBA · ${cabin().light.split(' ·')[0]} lighting`,env.co2>4000?'bad':env.co2>3000?'warn':'ok']];
+    const C=compound();
+    $('#hazList').innerHTML=(C.length?`<div class="combo"><div class="combot">⚠ Hazards adding up <span>NASA: hazards “can feed off one another”</span></div>${C.map(([s,n,d])=>`<div class="haz ${s}"><span class="hi">⚡</span><div><b>${n}</b><span>${d}</span></div></div>`).join('')}</div>`:'')+
+      H.map(([i,n,d,s])=>`<div class="haz ${s}"><span class="hi">${i}</span><div><b>${n}</b><span>${d}</span></div></div>`).join('');
+    C.forEach(([s,n,d])=>{const k=curDay()+'|'+n;if(!m.seen[k]){m.seen[k]=1;addLog('warn',`Hazards adding up — ${c.name}`,`${n}: ${d}`);}});
   }
   function drawTrend(){
     const cv=$('#hvTrend');if(!cv.clientWidth)return;const {x,w,h}=fit(cv);x.clearRect(0,0,w,h);
@@ -1622,20 +1680,23 @@ const HV=(()=>{
   }
   function renderAll(){renderWho();renderScore();renderSys();renderPlan();renderHaz();drawTrend();}
   // ---------- check-in ----------
-  let mood=null;
+  let mood=null,team=null;
+  $('#ciTeam').innerHTML=[1,2,3,4,5].map(n=>`<button type="button" data-n="${n}" aria-label="Teamwork ${n} of 5">${n}</button>`).join('');
+  $('#ciTeam').addEventListener('click',e=>{const b=e.target.closest('[data-n]');if(!b)return;team=+b.dataset.n;[...$('#ciTeam').children].forEach(x=>x.classList.toggle('on',x===b));});
   $('#ciMood').innerHTML=MOODS.map((e,i)=>`<button type="button" data-m="${i+1}" aria-label="Mood ${i+1} of 5">${e}</button>`).join('');
   $('#ciMood').addEventListener('click',e=>{const b=e.target.closest('[data-m]');if(!b)return;mood=+b.dataset.m;[...$('#ciMood').children].forEach(x=>x.classList.toggle('on',x===b));});
   const num=id=>{const v=$(id).value.trim();return v===''?null:+v;};
   function fillForm(t){$('#ciSys').value=t?.sys??'';$('#ciDia').value=t?.dia??'';$('#ciHr').value=t?.hr??'';$('#ciGlu').value=t?.glu??'';$('#ciTemp').value=t?.temp??'';$('#ciSleep').value=t?.sleep??'';
     mood=t?.mood??null;[...$('#ciMood').children].forEach(x=>x.classList.toggle('on',+x.dataset.m===mood));
+    team=t?.team??null;[...$('#ciTeam').children].forEach(x=>x.classList.toggle('on',+x.dataset.n===team));
     $('#sHead').checked=!!t?.head;$('#sVis').checked=!!t?.vis;$('#sBack').checked=!!t?.back;$('#sNau').checked=!!t?.nau;}
-  $('#ciSample').onclick=()=>fillForm({sys:118,dia:76,hr:Math.round(CREW[who].v.hr),glu:92,temp:36.7,sleep:6.5,mood:4});
+  $('#ciSample').onclick=()=>fillForm({sys:118,dia:76,hr:Math.round(CREW[who].v.hr),glu:92,temp:36.7,sleep:6.5,mood:4,team:4});
   $('#ciForm').addEventListener('submit',e=>{e.preventDefault();
-    const t={sys:num('#ciSys'),dia:num('#ciDia'),hr:num('#ciHr'),glu:num('#ciGlu'),temp:num('#ciTemp'),sleep:num('#ciSleep'),mood,head:$('#sHead').checked,vis:$('#sVis').checked,back:$('#sBack').checked,nau:$('#sNau').checked};
-    if([t.sys,t.dia,t.hr,t.glu,t.temp,t.sleep,t.mood].every(v=>v==null)){toast('Enter at least one measurement');return;}
+    const t={sys:num('#ciSys'),dia:num('#ciDia'),hr:num('#ciHr'),glu:num('#ciGlu'),temp:num('#ciTemp'),sleep:num('#ciSleep'),mood,team,head:$('#sHead').checked,vis:$('#sVis').checked,back:$('#sBack').checked,nau:$('#sNau').checked};
+    if([t.sys,t.dia,t.hr,t.glu,t.temp,t.sleep,t.mood,t.team].every(v=>v==null)){toast('Enter at least one measurement');return;}
     if((t.sys==null)!==(t.dia==null)){toast('Enter both blood pressure numbers');return;}
     const c=CREW[who],m=ME[c.id],first=!m.today;m.today=t;if(first)m.xp+=50;
-    const ev=[['Blood pressure',t.sys!=null?`${t.sys}/${t.dia}`:null,R.bp(t.sys,t.dia)],['Heart rate',t.hr!=null?t.hr+' bpm':null,R.hr(t.hr)],['Blood sugar',t.glu!=null?t.glu+' mg/dL':null,R.glu(t.glu)],['Temperature',t.temp!=null?t.temp+' °C':null,R.temp(t.temp)],['Sleep',t.sleep!=null?t.sleep+' h':null,R.sleep(t.sleep)],['Mood',t.mood?MOODS[t.mood-1]:null,R.mood(t.mood)]].filter(r=>r[1]!=null);
+    const ev=[['Blood pressure',t.sys!=null?`${t.sys}/${t.dia}`:null,R.bp(t.sys,t.dia)],['Heart rate',t.hr!=null?t.hr+' bpm':null,R.hr(t.hr)],['Blood sugar',t.glu!=null?t.glu+' mg/dL':null,R.glu(t.glu)],['Temperature',t.temp!=null?t.temp+' °C':null,R.temp(t.temp)],['Sleep',t.sleep!=null?t.sleep+' h':null,R.sleep(t.sleep)],['Mood',t.mood?MOODS[t.mood-1]:null,R.mood(t.mood)],['Teamwork',t.team?t.team+'/5':null,R.team(t.team)]].filter(r=>r[1]!=null);
     const sym=['head','vis','back','nau'].filter(k=>t[k]).map(k=>({head:'headache',vis:'blurred vision',back:'back pain',nau:'nausea'}[k]));
     const ov=worst(...ev.map(r=>r[2][0]),sym.length?'warn':null);
     $('#ciResult').innerHTML=ev.map(([l,v,r])=>`<div class="vrow ${r[0]}"><span>${l}</span><span><b>${v}</b> · ${r[1]}</span></div>`).join('')+(sym.length?`<div class="vrow warn"><span>Symptoms</span><span><b>${sym.join(', ')}</b></span></div>`:'')+
@@ -1666,61 +1727,168 @@ const HV=(()=>{
   return {get who(){return who;},select:k=>{selSys=k;renderSys();},renderAll};
 })();
 
-/* ---------- clickable 3D body for "My health" (three.js); list buttons are the fallback ---------- */
+/* ---------- anatomical 3D body for "Astronaut health" (three.js, procedural, x-ray style) ----------
+   Translucent skin, skeleton, organs and blood vessels. Organs keep natural colours; a system that
+   needs attention glows amber, one that needs action pulses red. Labels with leader lines are
+   clickable; layer buttons show or hide skin, skeleton, organs and vessels.
+   A stylised teaching model, not a medical-grade anatomy atlas. */
 const BODY=(()=>{
   const noop={setStatus(){},resize(){}};
   if(!window.THREE)return noop;
   let rnd;try{rnd=new THREE.WebGLRenderer({antialias:true,alpha:true});}catch(e){return noop;}
   if(!rnd.getContext())return noop;
-  const T=THREE,host=$('#body3d');rnd.setPixelRatio(Math.min(2,window.devicePixelRatio||1));host.appendChild(rnd.domElement);
-  const scene=new T.Scene(),cam=new T.PerspectiveCamera(30,1,.1,50);
-  scene.add(new T.HemisphereLight(0xbfd4ff,0x101828,.85));const dl=new T.DirectionalLight(0xffffff,.7);dl.position.set(2,3,4);scene.add(dl);
+  const T=THREE,host=$('#body3d'),labHost=$('#bodyLab');
+  rnd.setPixelRatio(Math.min(2,window.devicePixelRatio||1));host.insertBefore(rnd.domElement,host.firstChild);
+  const scene=new T.Scene(),cam=new T.PerspectiveCamera(26,1,.05,30);
+  scene.add(new T.HemisphereLight(0xdfe8ff,0x1a1420,.75));
+  const key=new T.DirectionalLight(0xffffff,.85);key.position.set(1.5,2,2.5);scene.add(key);
+  const rim=new T.DirectionalLight(0x7fb4ff,.55);rim.position.set(-2,1,-2);scene.add(rim);
   const fig=new T.Group();scene.add(fig);
+  const layers={skin:new T.Group(),bones:new T.Group(),organs:new T.Group(),vessels:new T.Group()};
+  Object.values(layers).forEach(g=>fig.add(g));
   const parts={},pick=[];
-  const mat=(c,o={})=>new T.MeshStandardMaterial(Object.assign({color:c,roughness:.5,metalness:.1,emissive:0x000000},o));
-  function part(sys,geo,m,x,y,z,parent=fig){const me=new T.Mesh(geo,m);me.position.set(x,y,z);me.userData.sys=sys;parent.add(me);pick.push(me);(parts[sys]=parts[sys]||[]).push(me);return me;}
-  const skin=()=>mat(0xd9e3f5,{transparent:true,opacity:.95});
-  // body shell (transparent torso so organs are visible)
-  const torso=new T.Mesh(new T.CylinderGeometry(.34,.28,.9,28),mat(0x9fb6e6,{transparent:true,opacity:.16,depthWrite:false}));torso.position.y=1.05;fig.add(torso);
-  const pelvis=new T.Mesh(new T.SphereGeometry(.3,24,16),mat(0x9fb6e6,{transparent:true,opacity:.16,depthWrite:false}));pelvis.scale.set(1,.55,.75);pelvis.position.y=.6;fig.add(pelvis);
-  part('brain',new T.SphereGeometry(.24,32,24),skin(),0,1.78,0);
-  part('eyes',new T.SphereGeometry(.045,16,12),mat(0xffffff),-.085,1.8,.21);part('eyes',new T.SphereGeometry(.045,16,12),mat(0xffffff),.085,1.8,.21);
-  const neck=new T.Mesh(new T.CylinderGeometry(.08,.09,.14,12),mat(0xd9e3f5));neck.position.y=1.53;fig.add(neck);
-  part('lungs',new T.SphereGeometry(.13,20,16),mat(0xff9fb0,{transparent:true,opacity:.85}),-.14,1.18,0).scale.set(1,1.45,.8);
-  part('lungs',new T.SphereGeometry(.13,20,16),mat(0xff9fb0,{transparent:true,opacity:.85}),.14,1.18,0).scale.set(1,1.45,.8);
-  const heart=part('heart',new T.SphereGeometry(.085,20,16),mat(0xff3355),-.04,1.08,.12);heart.scale.set(1,1.15,.9);
-  part('bones',new T.CylinderGeometry(.03,.03,.95,10),mat(0xf2ead6),0,1.05,-.16);
-  part('rad',new T.BoxGeometry(.12,.08,.03),mat(0xffd27a,{metalness:.5}),.2,1.3,.3);
+  const V=(x,y,z)=>new T.Vector3(x,y,z);
+  const std=(c,o={})=>new T.MeshStandardMaterial(Object.assign({color:c,roughness:.55,metalness:.05,emissive:0x000000},o));
+  const ctex=(w,h,fn)=>{const c=document.createElement('canvas');c.width=w;c.height=h;fn(c.getContext('2d'),w,h);const t=new T.CanvasTexture(c);t.wrapS=t.wrapT=T.RepeatWrapping;return t;};
+  function reg(sys,mesh){if(!sys)return mesh;mesh.userData.sys=sys;pick.push(mesh);(parts[sys]=parts[sys]||[]).push(mesh);return mesh;}
+  function mesh(geo,mat,layer,sys,x=0,y=0,z=0){const m=new T.Mesh(geo,mat);m.position.set(x,y,z);layers[layer].add(m);return reg(sys,m);}
+  function tube(points,r,mat,layer,sys,seg=40){const c=new T.CatmullRomCurve3(points);return mesh(new T.TubeGeometry(c,seg,r,8,false),mat,layer,sys);}
+  // a tapered segment between two points
+  function seg(a,b,r1,r2,mat,layer,sys,rs=14){const d=new T.Vector3().subVectors(b,a),len=d.length();const m=mesh(new T.CylinderGeometry(r2,r1,len,rs,1),mat,layer,sys);
+    m.position.copy(a).addScaledVector(d,.5);m.quaternion.setFromUnitVectors(V(0,1,0),d.normalize());return m;}
+  function ball(p,r,mat,layer,sys,sx=1,sy=1,sz=1){const m=mesh(new T.SphereGeometry(r,24,18),mat,layer,sys,p.x,p.y,p.z);m.scale.set(sx,sy,sz);return m;}
+
+  // ---- skin: fresnel "x-ray" shell ----
+  const skinM=new T.ShaderMaterial({uniforms:{c:{value:new T.Color(0xf0c2a8)},o:{value:1}},transparent:true,depthWrite:false,
+    vertexShader:'varying vec3 vN;varying vec3 vV;void main(){vN=normalize(normalMatrix*normal);vec4 mv=modelViewMatrix*vec4(position,1.);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}',
+    fragmentShader:'uniform vec3 c;uniform float o;varying vec3 vN;varying vec3 vV;void main(){float f=1.-abs(dot(vN,vV));gl_FragColor=vec4(c,(.05+.6*pow(f,2.2))*o);}'});
+  {const prof=[[.001,-.1],[.14,-.09],[.165,-.02],[.16,.06],[.138,.15],[.135,.2],[.15,.3],[.165,.4],[.172,.47],[.13,.53],[.06,.565],[.001,.57]].map(([r,y])=>new T.Vector2(r,y));
+   const torso=mesh(new T.LatheGeometry(prof,40),skinM,'skin',null);torso.scale.set(1,1,.62);}
+  seg(V(0,.54,-.005),V(0,.65,.0),.052,.048,skinM,'skin',null);
+  ball(V(0,.735,.005),.1,skinM,'skin',null,.9,1.13,1.02);
   for(const s of [-1,1]){
-    const arm=new T.Group();arm.position.set(s*.43,1.4,0);arm.rotation.z=s*.18;fig.add(arm);
-    part('blood',new T.CylinderGeometry(.075,.06,.62,14),skin(),0,-.31,0,arm);part('blood',new T.SphereGeometry(.07,12,10),skin(),0,-.66,0,arm);
-    part('bones',new T.CylinderGeometry(.11,.09,.82,14),mat(0xd9e3f5,{transparent:true,opacity:.95}),s*.15,.02,0);
-    part('bones',new T.SphereGeometry(.1,14,10),mat(0xf2ead6),s*.15,.02,0);
-    part('bones',new T.BoxGeometry(.14,.07,.24),mat(0x9aa6bf),s*.15,-.4,.05);
+    ball(V(s*.185,.465,0),.055,skinM,'skin',null);
+    seg(V(s*.19,.46,0),V(s*.26,.19,.015),.05,.038,skinM,'skin',null);ball(V(s*.26,.19,.015),.038,skinM,'skin',null);
+    seg(V(s*.26,.19,.015),V(s*.3,-.05,.03),.037,.026,skinM,'skin',null);
+    ball(V(s*.312,-.11,.035),.04,skinM,'skin',null,.6,1.35,.32);
+    seg(V(s*.09,-.06,0),V(s*.1,-.48,.005),.08,.052,skinM,'skin',null);ball(V(s*.1,-.48,.005),.052,skinM,'skin',null);
+    seg(V(s*.1,-.48,.005),V(s*.1,-.86,-.005),.05,.03,skinM,'skin',null);
+    ball(V(s*.1,-.885,.035),.05,skinM,'skin',null,.75,.42,1.6);
   }
-  fig.position.y=-1.0;
-  // status colouring and selection
+
+  // ---- skeleton ----
+  const boneM=std(0xeee3cb,{roughness:.6});
+  const skullM=std(0xeee3cb,{roughness:.55,transparent:true,opacity:.38,depthWrite:false});
+  ball(V(0,.745,-.002),.093,skullM,'bones','bones',.9,1.08,1.02);
+  mesh(new T.BoxGeometry(.085,.03,.075),boneM,'bones','bones',0,.665,.03);
+  for(let i=0;i<24;i++){const t=i/23,y=.6-t*.6,z=-.06-.018*Math.sin(t*Math.PI*1.6);
+    mesh(new T.CylinderGeometry(.015+t*.006,.015+t*.006,.014,10),boneM,'bones','bones',0,y,z);
+    mesh(new T.BoxGeometry(.008,.01,.024),boneM,'bones','bones',0,y,z-.02);}
+  for(let i=0;i<12;i++){const y=.455-i*.024,wf=.72+.28*Math.sin(Math.min(1,i/5)*Math.PI/2),front=i<7?1:i<10?.7:.4;
+    for(const s of [-1,1])tube([V(s*.016,y,-.062),V(s*.11*wf,y-.012,-.035),V(s*.13*wf,y-.03,.02),V(s*.095*wf*front,y-.045,.065*front),V(s*(i<7?.025:.06),y-.055,.075*front)],.0055,boneM,'bones','bones',24);}
+  mesh(new T.BoxGeometry(.026,.14,.012),boneM,'bones','bones',0,.39,.08);
+  for(const s of [-1,1]){
+    tube([V(s*.02,.5,.07),V(s*.09,.515,.05),V(s*.16,.495,0)],.007,boneM,'bones','bones',12);
+    ball(V(s*.115,.41,-.07),.06,boneM,'bones','bones',.9,1.1,.18);
+    seg(V(s*.18,.46,0),V(s*.258,.2,.012),.013,.011,boneM,'bones','bones');ball(V(s*.258,.2,.012),.016,boneM,'bones','bones');
+    seg(V(s*.256,.19,.008),V(s*.292,-.045,.02),.009,.007,boneM,'bones','bones');seg(V(s*.266,.19,.022),V(s*.306,-.045,.04),.009,.007,boneM,'bones','bones');
+    for(let f=0;f<4;f++)seg(V(s*(.296+f*.006),-.08,.02+f*.008),V(s*(.3+f*.009),-.17,.03+f*.01),.004,.003,boneM,'bones','bones',6);
+    mesh(new T.BoxGeometry(.025,.05,.04),boneM,'bones','bones',s*.31,-.075,.035);
+    ball(V(s*.085,.03,-.01),.075,boneM,'bones','bones',.85,.75,.35);
+    ball(V(s*.09,-.06,.005),.026,boneM,'bones','bones');
+    seg(V(s*.09,-.065,.005),V(s*.098,-.465,.008),.016,.013,boneM,'bones','bones');
+    ball(V(s*.099,-.475,.025),.022,boneM,'bones','bones',1,1,.7);
+    seg(V(s*.095,-.49,.006),V(s*.096,-.855,-.004),.013,.01,boneM,'bones','bones');seg(V(s*.115,-.49,-.008),V(s*.112,-.85,-.012),.006,.005,boneM,'bones','bones',8);
+    mesh(new T.BoxGeometry(.05,.03,.15),boneM,'bones','bones',s*.1,-.885,.035);
+  }
+  {const pv=mesh(new T.TorusGeometry(.075,.022,10,28),boneM,'bones','bones',0,-.01,.0);pv.rotation.x=Math.PI/2.4;pv.scale.set(1.15,1,.8);}
+
+  // ---- organs ----
+  const brainTex=ctex(256,128,(x,w,h)=>{x.fillStyle='#eab0b8';x.fillRect(0,0,w,h);x.strokeStyle='#b97482';x.lineWidth=2;
+    for(let i=0;i<70;i++){x.beginPath();let px=Math.random()*w,py=Math.random()*h;x.moveTo(px,py);for(let k=0;k<6;k++){px+=Math.random()*24-12;py+=Math.random()*16-8;x.quadraticCurveTo(px+8,py-6,px,py);}x.stroke();}});
+  ball(V(0,.758,-.008),.083,std(0xf0b6be,{map:brainTex,roughness:.75}),'organs','brain',.88,.84,1.06);
+  for(const s of [-1,1]){const e=ball(V(s*.031,.734,.084),.0135,std(0xfafafa,{roughness:.25}),'organs','eyes');
+    ball(V(s*.031,.734,.097),.0055,std(0x2a5d8a,{roughness:.2}),'organs','eyes');}
+  const lungTex=ctex(128,256,(x,w,h)=>{x.fillStyle='#f0a3ab';x.fillRect(0,0,w,h);x.strokeStyle='#c26a78';
+    for(let i=0;i<40;i++){x.lineWidth=Math.random()*2+.5;x.beginPath();x.moveTo(w/2,0);let px=w/2,py=0;for(let k=0;k<8;k++){px+=Math.random()*30-15;py+=h/9;x.lineTo(px,py);}x.stroke();}});
+  for(const s of [-1,1])ball(V(s*.062,.345,.005),.068,std(0xf2a6ae,{map:lungTex,roughness:.7,transparent:true,opacity:.92}),'organs','lungs',1,1.78,.95);
+  tube([V(0,.6,.035),V(0,.5,.03),V(0,.43,.02)],.009,std(0xd9c6c0),'organs','lungs',10);
+  for(const s of [-1,1])tube([V(0,.43,.02),V(s*.03,.41,.015),V(s*.055,.38,.01)],.0065,std(0xd9c6c0),'organs','lungs',10);
+  const heartM=std(0xb3263a,{roughness:.45});
+  const heart=new T.Group();heart.position.set(-.018,.305,.048);heart.rotation.set(.1,.25,.45);layers.organs.add(heart);
+  {const hb=new T.Mesh(new T.SphereGeometry(.045,24,18),heartM);hb.scale.set(1,1.15,.9);heart.add(hb);reg('heart',hb);
+   const ap=new T.Mesh(new T.ConeGeometry(.038,.06,20),heartM);ap.position.y=-.05;ap.rotation.z=Math.PI;heart.add(ap);reg('heart',ap);}
+  const artM=std(0xcc2233,{roughness:.4}),veinM=std(0x2f5fd0,{roughness:.4});
+  tube([V(-.005,.34,.045),V(.0,.405,.035),V(-.02,.42,.0),V(-.018,.38,-.04),V(-.012,.2,-.045),V(-.008,0,-.035)],.011,artM,'organs','heart',36);
+  tube([V(.022,.33,.045),V(.03,.36,.03)],.009,artM,'organs','heart',8);
+  tube([V(.022,-.0,-.025),V(.025,.15,-.03),V(.025,.29,.02),V(.012,.31,.04)],.0115,veinM,'organs','heart',24);
+  const liver=ball(V(.045,.195,.02),.1,std(0x7d2f24,{roughness:.5}),'organs','blood',1.1,.55,.7);liver.rotation.z=-.25;
+  ball(V(-.075,.165,-.03),.03,std(0x6a2a40),'organs','blood',1,.6,.6);
+  tube([V(-.03,.225,.05),V(-.075,.205,.045),V(-.088,.155,.045),V(-.06,.12,.05),V(-.015,.125,.05)],.024,std(0xd6897a,{roughness:.6}),'organs',null,20);
+  {const pts=[];for(let i=0;i<80;i++){const a=i*.55,r=.06*(1-i/95);pts.push(V(Math.cos(a)*r+.004*Math.sin(i),.06-i*.0009+.012*Math.sin(a*2),.045+Math.sin(a)*.012));}
+   tube(pts,.0125,std(0xe9a493,{roughness:.6}),'organs',null,240);}
+  tube([V(-.075,-.02,.04),V(-.088,.06,.04),V(-.08,.115,.045),V(0,.12,.06),V(.08,.115,.045),V(.088,.06,.04),V(.07,-.02,.04),V(.02,-.04,.045)],.02,std(0xc9806e,{roughness:.6}),'organs',null,60);
+  for(const s of [-1,1])ball(V(s*.058,.135,-.052),.024,std(0x8e3b2e),'organs',null,1,1.8,.8);
+  ball(V(0,-.035,.05),.025,std(0xe6c97a,{transparent:true,opacity:.85}),'organs',null);
+  const badge=mesh(new T.BoxGeometry(.034,.044,.008),std(0xffd27a,{metalness:.6,roughness:.3}),'skin','rad',.11,.41,.11);
+  mesh(new T.BoxGeometry(.03,.006,.009),std(0x2a3550),'skin','rad',.11,.425,.112);
+
+  // ---- vessels (arteries red, veins blue) ----
+  const vA=std(0xd02a3a,{roughness:.4}),vV=std(0x3a66d8,{roughness:.4});
+  for(const s of [-1,1]){
+    tube([V(s*.01,.405,.02),V(s*.02,.5,.03),V(s*.024,.62,.03),V(s*.03,.7,.04)],.0042,vA,'vessels','blood',16);
+    tube([V(s*.03,.42,.0),V(s*.12,.46,.0),V(s*.2,.43,.01),V(s*.262,.19,.03),V(s*.3,-.05,.045),V(s*.31,-.13,.05)],.0042,vA,'vessels','blood',30);
+    tube([V(s*.04,.43,-.01),V(s*.13,.47,-.01),V(s*.21,.44,-.005),V(s*.272,.19,.0),V(s*.31,-.05,.01)],.0046,vV,'vessels','blood',30);
+    tube([V(-.008,-.0,-.03),V(s*.06,-.04,.01),V(s*.095,-.25,.03),V(s*.1,-.48,-.012),V(s*.1,-.86,.0),V(s*.1,-.89,.07)],.0048,vA,'vessels','blood',36);
+    tube([V(.02,-.0,-.02),V(s*.07,-.05,.0),V(s*.108,-.25,.012),V(s*.112,-.48,-.03),V(s*.112,-.85,-.02)],.0052,vV,'vessels','blood',36);
+  }
+
+  // ---- status colouring, layers, labels ----
   const COL={ok:0x3ddc97,warn:0xffb547,bad:0xff5470};let status={},sel=null,hover=null;
-  function setStatus(st,s){status=st;sel=s;}
+  function setStatus(st,s){status=st;sel=s;renderLabels();}
+  const NAMES={brain:'Brain',eyes:'Eyes',lungs:'Lungs',heart:'Heart',blood:'Blood & liver',bones:'Skeleton',rad:'Dosimeter'};
+  const ANCH={brain:[V(0,.8,0),'L'],lungs:[V(.075,.4,.02),'L'],blood:[V(.06,.19,.04),'L'],bones:[V(.098,-.3,.01),'L'],eyes:[V(.031,.735,.095),'R'],heart:[V(-.03,.31,.06),'R'],rad:[V(.11,.41,.115),'R']};
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('class','blines');labHost.appendChild(svg);
+  const LAB={};
+  for(const k of Object.keys(ANCH)){const b=document.createElement('button');b.type='button';b.className='blab';b.dataset.s=k;labHost.appendChild(b);LAB[k]=b;
+    const ln=document.createElementNS('http://www.w3.org/2000/svg','line');svg.appendChild(ln);LAB[k].ln=ln;
+    const dot=document.createElementNS('http://www.w3.org/2000/svg','circle');dot.setAttribute('r','3');svg.appendChild(dot);LAB[k].dot=dot;}
+  labHost.addEventListener('click',e=>{const b=e.target.closest('.blab');if(b)HV.select(b.dataset.s);});
+  function renderLabels(){for(const k of Object.keys(LAB)){const st=status[k]||'ok';LAB[k].innerHTML=`<span class="sd ${st}"></span>${NAMES[k]}`;LAB[k].classList.toggle('on',k===sel);}}
+  const LCOL={ok:'#3ddc97',warn:'#ffb547',bad:'#ff5470'},tmp=new T.Vector3();
+  function placeLabels(w,h){const side={L:[],R:[]};
+    for(const [k,[p,sd]] of Object.entries(ANCH)){const vis=k==='bones'?layers.bones.visible:k==='blood'?(layers.organs.visible||layers.vessels.visible):k==='rad'?layers.skin.visible:(k==='heart'||k==='lungs'||k==='brain'||k==='eyes')?layers.organs.visible:true;
+      tmp.copy(p);fig.localToWorld(tmp);tmp.project(cam);const x=(tmp.x*.5+.5)*w,y=(-tmp.y*.5+.5)*h;side[sd].push({k,x,y,vis});}
+    for(const sd of ['L','R']){const arr=side[sd].sort((a,b)=>a.y-b.y);let last=-99;arr.forEach(o=>{o.ly=Math.max(o.y,last+30);last=o.ly;});
+      arr.forEach(o=>{const b=LAB[o.k],bw=b.offsetWidth||90,lx=sd==='L'?10:w-10-bw;b.style.transform=`translate(${lx}px,${o.ly-12}px)`;b.style.display=o.vis?'':'none';
+        const ex=sd==='L'?lx+bw:lx,st=status[o.k]||'ok',c=o.k===sel?'#4fd1ff':LCOL[st];
+        b.ln.setAttribute('x1',ex);b.ln.setAttribute('y1',o.ly);b.ln.setAttribute('x2',o.x);b.ln.setAttribute('y2',o.y);b.ln.setAttribute('stroke',c);b.ln.style.display=o.vis?'':'none';
+        b.dot.setAttribute('cx',o.x);b.dot.setAttribute('cy',o.y);b.dot.setAttribute('fill',c);b.dot.style.display=o.vis?'':'none';});}}
+  document.querySelectorAll('#bodyLayers [data-l]').forEach(btn=>btn.addEventListener('click',()=>{const l=btn.dataset.l;layers[l].visible=!layers[l].visible;btn.classList.toggle('on',layers[l].visible);}));
   // orbit + picking
-  const view={az:.35,el:.12,r:5.2};let drag=null;const ray=new T.Raycaster(),mv=new T.Vector2();
-  const pickAt=e=>{const r=host.getBoundingClientRect();mv.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(mv,cam);const h=ray.intersectObjects(pick,false)[0];return h?h.object.userData.sys:null;};
-  host.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,m:0};host.setPointerCapture(e.pointerId);});
-  host.addEventListener('pointermove',e=>{if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.m+=Math.abs(dx)+Math.abs(dy);drag.x=e.clientX;drag.y=e.clientY;view.az-=dx*.01;view.el=Math.max(-.4,Math.min(.8,view.el+dy*.006));}
+  const view={az:0,el:.05,r:4.15};let drag=null,lastDrag=-1e9;const ray=new T.Raycaster(),mv=new T.Vector2();
+  const pickAt=e=>{const r=host.getBoundingClientRect();mv.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(mv,cam);
+    const h=ray.intersectObjects(pick.filter(m=>{let o=m;while(o){if(o.visible===false)return false;o=o.parent;}return true;}),false)[0];return h?h.object.userData.sys:null;};
+  host.addEventListener('pointerdown',e=>{if(e.target.closest('.blab'))return;drag={x:e.clientX,y:e.clientY,m:0};host.setPointerCapture(e.pointerId);});
+  host.addEventListener('pointermove',e=>{if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.m+=Math.abs(dx)+Math.abs(dy);drag.x=e.clientX;drag.y=e.clientY;view.az-=dx*.01;view.el=Math.max(-.5,Math.min(.7,view.el+dy*.006));lastDrag=performance.now();}
     else{hover=pickAt(e);host.style.cursor=hover?'pointer':'grab';}});
   host.addEventListener('pointerup',e=>{if(drag&&drag.m<6){const s=pickAt(e);if(s)HV.select(s);}drag=null;});
   host.addEventListener('pointerleave',()=>{hover=null;});
+  host.addEventListener('wheel',e=>{e.preventDefault();view.r=Math.max(1.4,Math.min(5.5,view.r*(1+e.deltaY*.001)));},{passive:false});
+  host.addEventListener('dblclick',()=>{view.az=0;view.el=.05;view.r=4.15;});
   function resize(){const w=host.clientWidth,h=host.clientHeight;if(!w||!h)return;rnd.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();}
   new ResizeObserver(resize).observe(host);
+  let t0=performance.now();
   function loop(now){requestAnimationFrame(loop);if($('#healthView').hidden)return;
-    if(!drag)view.az+=.003;
-    cam.position.set(view.r*Math.cos(view.el)*Math.sin(view.az),view.r*Math.sin(view.el)-.18,view.r*Math.cos(view.el)*Math.cos(view.az));cam.lookAt(0,-.18,0);
-    const hrv=CREW[HV.who]?CREW[HV.who].v.hr:70,beat=1+.12*Math.max(0,Math.sin(now/1000*Math.PI*2*hrv/60))**8;heart.scale.set(beat,1.15*beat,.9*beat);
+    if(!drag&&now-lastDrag>6000)view.az=Math.sin((now-t0)/7000)*.55;
+    cam.position.set(view.r*Math.cos(view.el)*Math.sin(view.az),-.06+view.r*Math.sin(view.el),view.r*Math.cos(view.el)*Math.cos(view.az));cam.lookAt(0,-.07,0);
+    const c=CREW[HV.who],hr=c?(c.v.hr||70):70,beat=1+.1*Math.max(0,Math.sin(now/1000*Math.PI*2*hr/60))**8;heart.scale.setScalar(beat);
     for(const [k,ms] of Object.entries(parts)){const st=status[k]||'ok',isSel=k===sel,isHov=k===hover;
-      const pulse=st==='bad'?.55+.45*Math.sin(now/180):1,inten=(st==='ok'?.18:st==='warn'?.45:.9)*pulse+(isSel?.35:0)+(isHov?.25:0);
-      ms.forEach(m=>{m.material.emissive.setHex(COL[st]);m.material.emissiveIntensity=inten;});}
-    rnd.render(scene,cam);}
-  requestAnimationFrame(loop);
+      const pulse=st==='bad'?.55+.45*Math.sin(now/180):1;let col=COL[st],inten=st==='ok'?0:st==='warn'?.35:.75*pulse;
+      if(isSel&&st==='ok'){col=COL.ok;inten=.22;}if(isHov)inten+=.18;
+      ms.forEach(m=>{if(m.material.emissive){m.material.emissive.setHex(col);m.material.emissiveIntensity=inten;}});}
+    rnd.render(scene,cam);placeLabels(host.clientWidth,host.clientHeight);}
+  requestAnimationFrame(loop);renderLabels();
   return {setStatus,resize};
 })();
 </script>
