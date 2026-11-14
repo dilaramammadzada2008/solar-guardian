@@ -258,6 +258,14 @@ body[data-tab=data] [data-tabs]:not([data-tabs~=data]){display:none!important}
 .nexts .gl{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--mut);width:100%}
 .actb{background:var(--cy);color:#05213A;border:0;border-radius:8px;padding:7px 12px;font-weight:600;font-size:13px}
 .actb.ok{background:var(--p3);color:var(--gr);border:1px solid var(--gr)}
+.efin{margin-top:22px;padding:16px;border:1px solid #5A2433;border-radius:12px;background:#1A0C12}
+.efin .gl{font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#FF9FB0;margin-bottom:10px}
+.ebig.gr{background:#0F2A1E;border-color:var(--gr)}
+.esum{margin-top:18px;padding:14px 16px;border-radius:12px;background:#140A0F;border:1px solid #3A1A24}
+.esum .gl{font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#FF9FB0;margin-bottom:8px}
+.esum ol,.esum ul{margin:0;padding-left:20px;color:#F1D9DE;font-size:16px;line-height:1.6}
+.esum .mono{color:#FFB3C0}
+.eok{font-size:15px;letter-spacing:1px;text-transform:uppercase;color:var(--gr)}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -711,29 +719,32 @@ const EMG={
     {t:'Measure vital signs',x:'Blood pressure, pulse and SpO₂. The smart shirt is already recording the heart rhythm; the CMO will add a 12-lead ECG from the medical kit.',g:[['bp','Blood pressure'],['pulse','Pulse'],['spo2','SpO₂']]},
     {t:'Ask and write down',x:'When did it start? What were they doing? Where is the pain, and does it spread to the arm, jaw or back? Is breathing hard?',note:true},
     {t:'No medicine without the CMO',x:'The CMO chooses any medicine from the onboard checklist and the medical record.'},
-    {t:'If they stop responding',x:'Switch to the "Not responding" steps straight away.',jump:'unresp'},
+    {t:'Stay until the CMO takes over',x:'Keep the person resting and keep talking to them. If they stop responding, switch to the "Not responding" steps straight away.',jump:'unresp',fin:[['The CMO is with the person now','cmo'],['Pain has eased, CMO will examine today','eased']]},
   ],
   unresp:[
     {t:'Shout for help',x:'The CMO and the Commander were alerted automatically. Call out to the rest of the crew.'},
     {t:'Check breathing: 10 seconds at most',x:'Look at the chest. Gasping is not normal breathing.',opts:[['Breathing normally','breathing'],['Not breathing normally','cpr']]},
   ],
-  breathing:[{t:'Keep them secured and watch',x:'Stay with them and check breathing again and again until the CMO takes over. If breathing stops, go to chest compressions.',jump:'cpr'}],
+  breathing:[{t:'Keep them secured and watch',x:'Stay with them and check breathing again and again until the CMO takes over. If breathing stops, go to chest compressions.',jump:'cpr',fin:[['The CMO has taken over','cmo']]}],
   cpr:[
     {t:'Start chest compressions now',x:'Centre of the chest, hard and fast: 100–120 a minute, 5–6 cm deep. Follow the beat.',beat:true,method:true},
     {t:'Get the defibrillator (AED)',x:'A second crew member brings the AED from the medical kit, switches it on and follows its voice. Keep compressions going until it says stop.',beat:true},
-    {t:'Keep going',x:'Do not stop until the CMO takes over, the AED tells you to, or the person starts breathing.',beat:true},
+    {t:'Keep going',x:'Do not stop until the CMO takes over, the AED tells you to, or the person starts breathing.',beat:true,fin:[['The CMO has taken over CPR','cmo'],['The person is breathing again','breathing']]},
   ],
 };
+const FIN_T={cmo:'Handed over to the CMO',eased:'Pain eased · CMO exam today',breathing:'Breathing again · CMO taking over'};
 const EMG_T={conscious:'Awake · chest pain',unresp:'Not responding',breathing:'Not responding · breathing',cpr:'Not responding · CPR'};
 let EM=null,emTick=null,beatTimer=null,audio=null,beatOn=false;
 function emgOpen(){
-  EM={mode:null,i:0,start:Date.now(),simT:S.now,note:''};
+  EM={mode:null,i:0,start:Date.now(),simT:S.now,note:'',fin:null,log:[]};emLog('Emergency opened · SOS sent to the CMO and the Commander');
   S.issues.push({id:'i'+(S.seq++),kind:'emg',t:'Emergency: crew alert',lvl:'rd',t0:S.now,log:[],cmo:true});save();
   $('#emg').hidden=false;emgRender();LK.start('mars');bc({type:'sos',who:'Aylin Rahimova',mission:fmt(S.now),path:'Crew is assessing',sent:Date.now()});clearInterval(emTick);emTick=setInterval(emgClock,500);emgClock();render();
 }
+function emLog(t){if(!EM)return;const s=Math.floor((Date.now()-EM.start)/1000);EM.log.push({at:String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'),t})}
 function emgClock(){if(!EM)return;const s=Math.floor((Date.now()-EM.start)/1000);$('#emgClock').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
 function emgRender(){
   const B=$('#emgBody');let h='';
+  if(EM.fin){B.innerHTML=emgSummary();stopBeat();return}
   if(!EM.mode){
     h=`<div class="eq">Can the person answer you?</div><div class="ex">Speak loudly and tap both shoulders.</div>
       <div class="eopts"><button class="ebig" data-em="conscious">Yes: awake, chest pain or feels very unwell</button><button class="ebig red" data-em="unresp">No: not responding</button></div>`;
@@ -745,16 +756,28 @@ function emgRender(){
     if(s.beat)h+=`<div class="beatwrap"><div class="beat"></div><div><b>110</b> per minute<br><button class="btn sec" data-beatsnd>${beatOn?'Sound off':'Sound on'}</button></div></div>`;
     if(s.method)h+=`<div class="method"><b>In weightlessness:</b> alone with the patient, use the Evetts-Russomano method (your legs around the patient’s torso, ankles crossed behind their back). Once the patient is strapped to the medical restraint, use the handstand method (feet braced on the wall opposite). Source: DGLRM / ESAM space medicine CPR guideline; the ISS protocol uses the handstand method.</div>`;
     if(s.opts)h+=`<div class="eopts">${s.opts.map(([l,m])=>`<button class="ebig${m==='cpr'?' red':''}" data-em="${m}">${esc(l)}</button>`).join('')}</div>`;
+    if(s.fin)h+=`<div class="efin"><div class="gl">How did it end? Press one to finish</div><div class="eopts" style="margin-top:0">${s.fin.map(([l,k])=>`<button class="ebig gr" data-emfin="${k}">✓ ${esc(l)}</button>`).join('')}</div></div>`;
     h+=`<div class="enav"><button class="btn sec" data-emback>Back</button>${s.jump?`<button class="btn red" data-em="${s.jump}">${s.jump==='cpr'?'Start compressions':'Not responding'}</button>`:''}${!s.opts&&EM.i<steps.length-1?'<button class="btn" data-emnext>Done · next step</button>':''}</div>`;
   }
   B.innerHTML=h;
   const anyBeat=EM.mode&&EMG[EM.mode][EM.i].beat;if(!anyBeat)stopBeat();else if(beatOn)startBeat();
 }
+function emgSummary(){
+  const el=(Date.now()-EM.start)/1000,ow=LINK.s,arr=Math.max(0,ow-el),rep=Math.max(0,2*ow-el);
+  return `<div class="eok">Emergency handed over</div><div class="eq">✓ ${esc(FIN_T[EM.fin])}</div>
+    <div class="ex">Dr. K. Ito leads the care from here. You can close this screen.</div>
+    <div class="esum"><div class="gl">What happened</div><ol>${EM.log.map(x=>`<li><span class="mono">${x.at}</span> · ${esc(x.t)}</li>`).join('')}</ol>${EM.note?`<div style="margin-top:8px;color:#F1D9DE">Your notes: “${esc(EM.note)}”</div>`:''}</div>
+    <div class="esum"><div class="gl">What happens next</div><ul>
+      <li><b>Dr. K. Ito (CMO, on board):</b> examination and treatment decision.</li>
+      <li><b>Flight surgeon on Earth:</b> your SOS and data ${arr>0?`arrive in <span class="mono">${mmss(arr)}</span>`:'have arrived'}; reply ${rep>0?`expected in <span class="mono">${mmss(rep)}</span>`:'should be in'}.</li>
+      <li><b>Follow-up:</b> an open item is in <i>Health items &amp; report</i>, with this summary.</li></ul></div>
+    <div class="enav"><button class="btn" data-emclose>Close emergency screen</button><button class="btn sec" data-emunfin>Back to the steps</button></div>`;
+}
 function startBeat(){if(beatTimer)return;try{audio=audio||new (window.AudioContext||window.webkitAudioContext)();}catch(e){return}
   beatTimer=setInterval(()=>{try{const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=880;g.gain.value=.12;o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+.05)}catch(e){}},545);}
 function stopBeat(){clearInterval(beatTimer);beatTimer=null}
 function emgEnd(){
-  if(EM){const it=S.issues.find(i=>i.kind==='emg'&&i.t0===EM.simT);if(it){it.t='Emergency: '+(EM.mode?EMG_T[EM.mode]:'crew alert');if(EM.note)it.note=EM.note;}}
+  if(EM){const it=S.issues.find(i=>i.kind==='emg'&&i.t0===EM.simT);if(it){it.t='Emergency: '+(EM.mode?EMG_T[EM.mode]:'crew alert')+(EM.fin?' → '+FIN_T[EM.fin]:'');if(EM.note)it.note=EM.note;if(EM.fin)it.log.push({s:FIN_T[EM.fin],at:S.now});}}
   EM=null;stopBeat();clearInterval(emTick);LK.stop();bc({type:'sos-end'});$('#emg').hidden=true;save();render();toast('Emergency logged for the CMO and the flight surgeon.');
 }
 
@@ -762,7 +785,7 @@ function emgEnd(){
 const BC=('BroadcastChannel' in window)?new BroadcastChannel('solar-guardian'):null;
 function bc(m){try{BC&&BC.postMessage(m)}catch(e){}}
 if(BC)BC.onmessage=e=>{const m=e.data||{};
-  if(m.type==='ack'&&EM){EM.ack=m;const a=$('#emgAl');if(a){a.innerHTML='<span style="color:#3DDC97;font-weight:600">✓ '+esc(m.by)+' acknowledged at '+esc(m.at)+' · on the way</span> · flight surgeon message queued';}toast(m.by+' is on the way.');}
+  if(m.type==='ack'&&EM){EM.ack=m;emLog(m.by+' acknowledged · on the way');if(EM.fin)emgRender();const a=$('#emgAl');if(a){a.innerHTML='<span style="color:#3DDC97;font-weight:600">✓ '+esc(m.by)+' acknowledged at '+esc(m.at)+' · on the way</span> · flight surgeon message queued';}toast(m.by+' is on the way.');}
 };
 
 /* ===== Live Earth–Mars light time (NASA Deep Space Network, DSN Now feed) ===== */
@@ -1214,8 +1237,11 @@ document.addEventListener('click',ev=>{
   if(b.id==='emgEnd'){emgEnd();return}
   if(b.dataset.lk){LK.setMode(b.dataset.lk);return}
   if(b.id==='lkFast'){LK.fast();return}
-  if(EM&&b.dataset.em){EM.mode=b.dataset.em;EM.i=0;emgRender();bc({type:'sos-update',path:EMG_T[EM.mode]});return}
-  if(EM&&b.hasAttribute('data-emnext')){EM.i++;emgRender();return}
+  if(EM&&b.dataset.emfin){EM.fin=b.dataset.emfin;emLog(FIN_T[EM.fin]);bc({type:'sos-update',path:(EM.mode?EMG_T[EM.mode]+' → ':'')+FIN_T[EM.fin]});emgRender();return}
+  if(EM&&b.hasAttribute('data-emunfin')){EM.fin=null;EM.log.pop();emgRender();return}
+  if(EM&&b.hasAttribute('data-emclose')){emgEnd();return}
+  if(EM&&b.dataset.em){EM.mode=b.dataset.em;EM.i=0;emLog('Situation: '+EMG_T[EM.mode]);emgRender();bc({type:'sos-update',path:EMG_T[EM.mode]});return}
+  if(EM&&b.hasAttribute('data-emnext')){emLog('Done: '+EMG[EM.mode][EM.i].t);EM.i++;emgRender();return}
   if(EM&&b.hasAttribute('data-emback')){if(EM.i>0)EM.i--;else EM.mode=null;emgRender();return}
   if(EM&&b.hasAttribute('data-beatsnd')){beatOn=!beatOn;beatOn?startBeat():stopBeat();emgRender();return}
   if(b.dataset.sys){bodySelect(b.dataset.sys);return}
@@ -1234,7 +1260,9 @@ document.addEventListener('click',ev=>{
   if(b.hasAttribute('data-cmo')&&is){const i=S.issues.find(x=>x.id===is.dataset.iid);i.cmo=true;save();render();toast('Dr. K. Ito notified.');return}
   if(b.hasAttribute('data-cmoall')){S.issues.filter(issueOpen).forEach(i=>{if(i.lvl==='rd'||(i.log.length&&i.log[i.log.length-1].s==='Worsened'))i.cmo=true});save();render();toast('Dr. K. Ito notified.');return}
   if(b.id==='syAdd'){const sy=$('#sySel').value,sev=+$('#sySev').value,o=assessSymptom(sy,sev);
-    S.issues.push({id:'i'+(S.seq++),kind:'sym',t:`${sy} (${sev}/10)`,lvl:o.lvl,t0:S.now,log:[],cmo:false,note:$('#syNote').value,co2:Math.round(co2At(S.now))});
+    const dup=S.issues.find(i=>i.kind==='sym'&&issueOpen(i)&&i.t.split(' (')[0]===sy&&S.now-i.t0<=30);
+    if(dup){dup.t=`${sy} (${sev}/10)`;dup.lvl=o.lvl;dup.log.push({s:'Reported again',at:S.now});toast('Already logged: updated the same item.');}
+    else S.issues.push({id:'i'+(S.seq++),kind:'sym',t:`${sy} (${sev}/10)`,lvl:o.lvl,t0:S.now,log:[],cmo:false,note:$('#syNote').value,co2:Math.round(co2At(S.now))});
     $('#syOut').innerHTML=`<div class="out ${o.lvl}">${esc(o.res)}<div class="why">Rule: ${esc(o.rule)}</div></div>`;$('#syNote').value='';save();render();return}
   if(b.id==='viewTxt'||b.id==='viewJson'){S.view=b.id==='viewJson'?'json':'txt';save();renderReport();return}
   if(b.id==='sendCmo'){S.sent.cmo=S.now;save();render();toast('Sent to Dr. K. Ito.');return}
