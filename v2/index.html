@@ -1,0 +1,848 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Solar Guardian · Crew Self-Care</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070D1C;--p1:#0D1730;--p2:#0A1226;--p3:#13203F;--line:#1F2E52;--line2:#2B3E6B;
+  --ink:#E8EEF8;--ink2:#C3D0E6;--mut:#8395B8;
+  --cy:#4FD1FF;--gr:#3DDC97;--am:#FFB547;--rd:#FF7A8C;--bl:#5B8CFF;
+  --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,Arial,sans-serif}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.mut{color:var(--mut)} .sm{font-size:13px}
+
+/* top bar */
+.top{position:sticky;top:0;z-index:5;background:rgba(7,13,28,.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+.top .in{max-width:1280px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.brand{font-weight:700;display:flex;align-items:center;gap:10px;white-space:nowrap}
+.brand .lg{width:22px;height:22px;border-radius:6px;background:conic-gradient(from 200deg,#4FD1FF,#3DDC97,#4FD1FF);box-shadow:0 0 14px rgba(79,209,255,.35)}
+.brand small{font-weight:500;color:var(--mut);margin-left:4px}
+.meta{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--mut)}
+.meta b{color:var(--ink2);font-weight:500}
+.sim{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mut);border:1px dashed var(--line2);border-radius:10px;padding:5px 10px}
+.sim input{width:150px;accent-color:var(--cy)}
+.sim button{background:var(--p3);border:1px solid var(--line2);border-radius:7px;padding:2px 9px;font-size:12px}
+
+.wrap{max-width:1280px;margin:0 auto;padding:18px 16px 50px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:18px;align-items:start}
+@media (max-width:1050px){.layout{grid-template-columns:1fr}}
+.panel{background:var(--p1);border:1px solid var(--line);border-radius:14px}
+.ph{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.ph h3{margin:0;font-size:13px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink2);font-weight:600}
+.pb{padding:14px 16px}
+.stack{display:flex;flex-direction:column;gap:18px}
+
+/* status */
+.status{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;padding:16px 18px;border-radius:14px;background:var(--p1);border:1px solid var(--line);border-left:6px solid var(--gr)}
+.status.am{border-left-color:var(--am)} .status.rd{border-left-color:var(--rd)}
+.badge{font-family:var(--mono);font-size:12px;letter-spacing:1px;padding:4px 10px;border-radius:6px;background:rgba(61,220,151,.14);color:var(--gr);white-space:nowrap}
+.status.am .badge{background:rgba(255,181,71,.14);color:var(--am)} .status.rd .badge{background:rgba(255,122,140,.16);color:var(--rd)}
+.status .t1{font-size:20px;font-weight:600;line-height:1.25}
+.status .t2{color:var(--ink2);margin-top:2px}
+.status .act{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+@media (max-width:700px){.status{grid-template-columns:1fr}.status .act{justify-content:flex-start}}
+
+.vitals{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+@media (max-width:1100px){.vitals{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:560px){.vitals{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.vit{background:linear-gradient(180deg,#0F1B38,#0A1328);border:1px solid var(--line);border-radius:12px;padding:10px 12px 8px;position:relative;overflow:hidden}
+.vit .k{font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--mut)}
+.vit .big{font-family:var(--mono);font-size:24px;font-weight:500;line-height:1.15;margin-top:4px}
+.vit .big small{font-size:12px;color:var(--mut);margin-left:3px}
+.vit .w{font-size:12px;display:flex;align-items:center;gap:6px;margin-top:1px;color:var(--ink2)}
+.vit svg{display:block;width:100%;height:30px;margin-top:4px}
+.sechead{display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--mut);margin:16px 0 8px}
+.sechead::after{content:"";flex:1;height:1px;background:var(--line)}
+.live{display:inline-flex;align-items:center;gap:6px;color:var(--gr);letter-spacing:.5px}
+.live::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--gr);box-shadow:0 0 8px var(--gr);animation:blink 1.6s infinite}
+@keyframes blink{50%{opacity:.35}}
+.ecg{border-top:1px solid var(--line);padding:10px 16px 12px;background:#060B18;border-radius:0 0 14px 14px}
+.ecgh{display:flex;gap:16px;align-items:center;font-size:12px;color:var(--mut);margin-bottom:6px;flex-wrap:wrap}
+.ecgh b{font-family:var(--mono);color:var(--gr);font-weight:500}
+#ecg{display:block;width:100%;height:84px}
+.blab small{font-family:var(--mono);font-weight:400;color:#9fb3d6;margin-left:2px}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media (max-width:760px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--p2);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.kpi .k{font-size:12px;color:var(--mut);display:flex;justify-content:space-between}
+.kpi .v{font-weight:600;margin-top:2px;display:flex;align-items:center;gap:7px}
+.kpi .n{font-family:var(--mono);font-size:12px;color:var(--mut);margin-top:2px}
+.dot{width:8px;height:8px;border-radius:50%;flex:none;display:inline-block}
+.g{background:var(--gr)}.a{background:var(--am)}.r{background:var(--rd)}.b{background:var(--bl)}
+
+/* buttons */
+.btn{background:var(--cy);color:#05213A;border:0;border-radius:9px;padding:8px 14px;font-weight:600;font-size:14px}
+.btn.sec{background:var(--p3);color:var(--ink);border:1px solid var(--line2)}
+.btn.red{background:var(--rd);color:#2A0710}
+.btn:disabled{opacity:.5;cursor:default}
+.lnk{background:none;border:0;color:var(--cy);padding:0;font-size:13px}
+
+/* context requests */
+.req{border:1px solid var(--line2);border-radius:12px;background:var(--p2);margin-bottom:12px;overflow:hidden}
+.req:last-child{margin-bottom:0}
+.req .rh{display:flex;gap:12px;align-items:flex-start;padding:12px 14px}
+.req .rh .when{font-family:var(--mono);font-size:12px;color:var(--mut);min-width:92px;padding-top:2px}
+.req .rh .ttl{font-weight:600}
+.req .ev{font-size:13px;color:var(--ink2);margin-top:3px}
+.req .src{font-size:12px;color:var(--mut);margin-top:4px}
+.req .body{padding:0 14px 14px 118px}
+@media (max-width:700px){.req .body{padding:0 14px 14px}}
+.grp{margin-top:8px}
+.grp .gl{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--mut);margin-bottom:5px}
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+.opt{background:var(--p1);border:1px solid var(--line2);border-radius:8px;padding:6px 11px;font-size:14px}
+.opt:hover{border-color:var(--cy)} .opt.sel{border-color:var(--cy);background:#0F2C48}
+.req textarea,.form textarea,.form select{width:100%;background:var(--p1);border:1px solid var(--line2);border-radius:8px;padding:8px 10px;resize:vertical}
+.req textarea{margin-top:10px;min-height:38px}
+.out{margin-top:10px;border-radius:9px;padding:10px 12px;background:var(--p1);border-left:4px solid var(--gr);font-size:14px;color:var(--ink2)}
+.out.am{border-left-color:var(--am)} .out.rd{border-left-color:var(--rd)}
+.out b{color:var(--ink)}
+.out .why{font-size:12px;color:var(--mut);margin-top:4px}
+.req.done .rh{opacity:.95}
+.req .tagok{font-size:12px;font-family:var(--mono);padding:2px 8px;border-radius:6px;margin-left:auto;white-space:nowrap}
+.envn{border-color:rgba(255,181,71,.45)}
+
+/* timeline */
+.tl svg{display:block;width:100%;height:auto}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--mut);padding:0 16px 12px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:14px;height:8px;border-radius:2px}
+
+/* issues */
+.iss{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px;background:var(--p2)}
+.iss .ih{display:flex;gap:8px;align-items:center}
+.iss .it{font-weight:600;flex:1}
+.iss .ilog{font-size:12px;color:var(--mut);margin-top:4px;font-family:var(--mono)}
+.iss .opts{margin-top:8px}
+.iss .opt{font-size:12px;padding:4px 9px}
+.pill{font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:5px;border:1px solid var(--line2);color:var(--ink2);white-space:nowrap}
+.pill.rd{border-color:var(--rd);color:var(--rd)} .pill.am{border-color:var(--am);color:var(--am)} .pill.gr{border-color:var(--gr);color:var(--gr)}
+
+/* forms */
+.form .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.form label{display:block;font-size:12px;color:var(--mut);margin-bottom:4px}
+.form input[type=range]{width:100%;accent-color:var(--cy)}
+.report{background:var(--p2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:var(--mono);font-size:12px;line-height:1.55;color:var(--ink2);white-space:pre-wrap;max-height:300px;overflow:auto}
+.srcs{display:flex;flex-direction:column}
+.srcs .s{display:grid;grid-template-columns:1fr auto;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.srcs .s:last-child{border-bottom:0}
+.srcs .s small{display:block;color:var(--mut);font-size:12px}
+.srcs .st{font-family:var(--mono);font-size:11px;color:var(--gr);white-space:nowrap}
+.refs{font-size:12px;color:var(--mut);line-height:1.6}
+.refs a{color:var(--ink2)}
+.empty{color:var(--mut);font-size:14px;padding:4px 0}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#0F2C48;border:1px solid var(--cy);padding:10px 16px;border-radius:10px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:92vw;z-index:9}
+.toast.on{opacity:1}
+/* body */
+.bodygrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+@media (max-width:760px){.bodygrid{grid-template-columns:1fr}}
+.bodywrap{position:relative;height:460px;overflow:hidden;background:radial-gradient(300px 280px at 50% 45%,#13284a,#060a14 75%);border-right:1px solid var(--line)}
+#body3d{position:absolute;inset:0;cursor:grab}
+#body3d canvas{display:block;width:100%;height:100%}
+#bodyLab{position:absolute;inset:0;pointer-events:none}
+.blines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.blines line{stroke-width:1.2;opacity:.85}
+.blab{position:absolute;left:0;top:0;pointer-events:auto;display:flex;gap:6px;align-items:center;font:600 11px Inter,sans-serif;color:#dfe7f7;background:rgba(8,13,26,.85);border:1px solid #2a3b60;border-radius:7px;padding:4px 8px;cursor:pointer;white-space:nowrap}
+.blab:hover{border-color:#4fd1ff}.blab.on{border-color:var(--cy);box-shadow:0 0 0 1px rgba(79,209,255,.3)}
+.sd{width:7px;height:7px;border-radius:50%;display:inline-block;flex:none}.sd.ok{background:var(--gr)}.sd.warn{background:var(--am)}.sd.bad{background:var(--rd)}
+.layers{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);display:flex;gap:4px;background:rgba(8,13,26,.78);border:1px solid var(--line);border-radius:8px;padding:3px}
+.layers button{font:11px Inter,sans-serif;color:var(--mut);background:transparent;border:0;border-radius:6px;padding:4px 8px}
+.layers button.on{color:var(--ink);background:rgba(79,209,255,.16)}
+.bodyhint{position:absolute;left:10px;bottom:8px;font-size:10px;color:#56658a;pointer-events:none}
+.nobody{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--mut);font-size:13px;padding:20px;text-align:center}
+.sysd h4{margin:0;font-size:18px;display:flex;align-items:center;gap:8px}
+.sysd .stl{margin-top:4px;color:var(--ink2)}
+.sysd .sec{margin-top:14px}
+.sysd .sec .gl{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--mut);margin-bottom:6px}
+.sysd ul{margin:0;padding-left:18px;color:var(--ink2);font-size:14px}
+.sysd li{margin-bottom:4px}
+.syschips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.syschips .opt{display:inline-flex;align-items:center;gap:6px}
+
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+<div class="top"><div class="in">
+  <div class="brand"><span class="lg"></span>Solar Guardian <small>Crew Self-Care</small></div>
+  <div class="meta">
+    <span>Crew member <b>A. Rahimova</b></span>
+    <span>Mission <b>Mars transit · day 142</b></span>
+    <span>CMO <b>Dr. K. Ito</b></span>
+    <span>Earth link <b class="mono">14:32</b> one-way</span>
+  </div>
+  <div class="sim" title="Simulation control for the demo">
+    SIM <input id="clock" type="range" min="390" max="1320" step="5" value="425"><b class="mono" id="clockTxt">07:05</b>
+    <button id="play">Play</button><button id="reset">Reset</button>
+  </div>
+</div></div>
+
+<div class="wrap">
+  <div class="status" id="status">
+    <span class="badge" id="stBadge">NOMINAL</span>
+    <div><div class="t1" id="stT1"></div><div class="t2" id="stT2"></div></div>
+    <div class="act" id="stAct"></div>
+  </div>
+
+  <div class="sechead"><span class="live">LIVE</span> Vitals · smart shirt and medical kit · compared with your 14-day baseline</div>
+  <div class="vitals" id="vitals"></div>
+  <div class="sechead">Today</div>
+  <div class="kpis" id="kpis" style="margin-bottom:18px"></div>
+
+  <div class="layout">
+    <div class="stack">
+      <section class="panel">
+        <div class="ph"><h3>Body overview</h3><span class="sm mut">tap an organ or a label</span></div>
+        <div class="bodygrid">
+          <div class="bodywrap"><div id="body3d"><div id="bodyLab"></div></div><div class="layers" id="bodyLayers"><button type="button" class="on" data-l="skin">Skin</button><button type="button" class="on" data-l="bones">Skeleton</button><button type="button" class="on" data-l="organs">Organs</button><button type="button" class="on" data-l="vessels">Vessels</button></div><div class="bodyhint">drag to turn · scroll to zoom</div></div>
+          <div class="pb sysd" id="sysDetail"></div>
+        </div>
+        <div class="ecg"><div class="ecgh"><span class="live">ECG</span><span>Lead I · smart shirt · 25 mm/s</span><span>HR <b id="ecgHr">--</b></span><span>Rhythm <b id="ecgRh">Sinus</b></span></div><canvas id="ecg"></canvas></div>
+      </section>
+      <section class="panel">
+        <div class="ph"><h3>Context requests</h3><span class="sm mut" id="reqCount"></span></div>
+        <div class="pb" id="reqs"></div>
+      </section>
+
+      <section class="panel tl">
+        <div class="ph"><h3>Today · data with your context</h3><span class="sm mut">baseline = your last 14 days</span></div>
+        <svg id="chart" viewBox="0 0 1000 300" role="img" aria-label="Timeline of schedule, heart rate against personal baseline, cabin CO2, and crew annotations"></svg>
+        <div class="legend">
+          <span><i style="background:#2C4C8A"></i>crew schedule</span>
+          <span><i style="background:#1C3360"></i>personal baseline</span>
+          <span><i style="background:var(--cy);height:2px"></i>heart rate</span>
+          <span><i style="background:var(--am);height:2px"></i>cabin CO₂</span>
+          <span><i style="background:var(--gr)"></i>context added</span>
+          <span><i style="background:var(--am)"></i>context pending</span>
+        </div>
+      </section>
+    </div>
+
+    <div class="stack">
+      <section class="panel">
+        <div class="ph"><h3>Open health items</h3><span class="sm mut">follow-up</span></div>
+        <div class="pb" id="issues"></div>
+      </section>
+
+      <section class="panel">
+        <div class="ph"><h3>Report a symptom</h3></div>
+        <div class="pb form">
+          <div class="row">
+            <div><label for="sySel">Symptom</label><select id="sySel"></select></div>
+            <div><label for="syOn">Started</label><select id="syOn"><option>Just now</option><option>Within the last hour</option><option>Earlier today</option><option>Yesterday or before</option></select></div>
+          </div>
+          <label for="sySev">Severity <b id="sySevTxt" class="mono">3</b>/10</label>
+          <input id="sySev" type="range" min="0" max="10" value="3">
+          <textarea id="syNote" placeholder="Anything else? (optional)" style="margin-top:8px;min-height:38px"></textarea>
+          <div style="margin-top:10px"><button class="btn" id="syAdd">Log symptom</button></div>
+          <div id="syOut"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="ph"><h3>Report to medical officer</h3><span class="opts"><button class="opt" id="viewTxt" style="font-size:12px;padding:3px 8px">Note</button><button class="opt" id="viewJson" style="font-size:12px;padding:3px 8px">Data</button></span></div>
+        <div class="pb">
+          <div class="sm mut" style="margin-bottom:8px">Structured so the CMO's decision-support tools, such as an assistant like the NASA–Google CMO-DA, can read it directly.</div>
+          <div class="report" id="report"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+            <button class="btn" id="sendCmo">Send to CMO</button>
+            <button class="btn sec" id="sendGnd">Queue for flight surgeon</button>
+          </div>
+          <div class="sm mut" id="sendInfo" style="margin-top:6px">You review it before it is sent. Ground messages are asynchronous.</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="ph"><h3>Data sources</h3><span class="sm mut">read-only</span></div>
+        <div class="pb srcs" id="srcs"></div>
+      </section>
+    </div>
+  </div>
+
+  <section class="panel" style="margin-top:18px">
+    <div class="ph"><h3>Design basis</h3></div>
+    <div class="pb refs">
+      Solar Guardian is a prototype of the <b>crew-facing self-care front end</b> of an onboard clinical decision support system (CDSS), as described by NASA's Human Research Program, Exploration Medical Capability (ExMC):<br>
+      · NASA ExMC, Clinical Decision Support System Concept of Operations, HRP-48033 (2022). NTRS 20220017856: crew self-care, symptom logging, follow-up status (resolved / improved / no change / worsened), cabin atmosphere identification across crew.<br>
+      · Parker, Krihak et al., Earth-Independent Medical Operations (EIMO) Concept of Operations, HRP IWS (2025). NTRS 20250000009: gradual transfer of medical decisions onboard; "self-medical management and behavioral health" scenario.<br>
+      · EIMO Datascope Technical Interchange Meeting (2023). NTRS 20240001278: a "system of systems" combining wearables, environment, countermeasures, behavioral data and point-of-care tests.<br>
+      · NASA OCHMO, Integrated Medical Model (IMM) overview: a probabilistic model of 100 spaceflight medical conditions in three categories (environmental, injury/trauma, medical illness). Solar Guardian classifies each health item with these categories. <a href="https://www.nasa.gov/nasa-integrated-medical-model-imm-overview/" target="_blank" rel="noopener">nasa.gov</a><br>
+      · Google Public Sector (8 Aug 2025), How Google and NASA are testing AI for medical care in space: the Crew Medical Officer Digital Assistant (CMO-DA), a proof-of-concept CDSS that supports the CMO. Solar Guardian is not CMO-DA; it collects the crew member's data and context in a structured form such a tool could use. <a href="https://cloud.google.com/blog/topics/public-sector/how-google-and-nasa-are-testing-ai-for-medical-care-in-space" target="_blank" rel="noopener">cloud.google.com</a><br>
+      <span style="color:var(--ink2)">Simulated data for demonstration. Not a medical device. Decision rules are simple, transparent and listed with each outcome; clinical thresholds would be set by flight surgeons.</span>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const $=s=>document.querySelector(s);
+const fmt=m=>{m=Math.round(m);return String(Math.floor(m/60)%24).padStart(2,'0')+':'+String(m%60).padStart(2,'0')};
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function store(k,v){try{if(v===undefined)return JSON.parse(localStorage.getItem('sg2b_'+k));localStorage.setItem('sg2b_'+k,JSON.stringify(v))}catch(e){return null}}
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>e.classList.remove('on'),2800)}
+
+/* ===== Simulated mission data (one day) ===== */
+const BASE={hrLo:58,hrHi:78,hr:66,sleep:7.0,hrv:52};
+const SCHEDULE=[
+  {s:480,e:510,l:'Breakfast'},
+  {s:540,e:600,l:'Exercise (prescribed 60 min)',ex:true},
+  {s:660,e:780,l:'Plant growth experiment'},
+  {s:840,e:900,l:'Habitat maintenance'},
+  {s:960,e:1020,l:'Robotics training'},
+  {s:1140,e:1200,l:'Crew dinner'},
+];
+const EX_END=582; // stopped at 70% of prescribed load
+const EP=[{id:'hr1',s:790,e:830,up:24},{id:'hr2',s:1040,e:1065,up:19}];
+const SLEEP={h:5.7,wk:4,on:'00:40',off:'06:25'};
+const BP='118/76', DOSE={day:1.8,tot:255,lim:600};
+const nz=t=>Math.sin(t*.37)*1.6+Math.sin(t*.091)*2.2+Math.sin(t*1.7)*.8;
+function hrAt(t){let h=BASE.hr+nz(t);
+  if(t>=540&&t<EX_END){const p=Math.min(1,(t-540)/8,(EX_END-t)/5);h+=58*Math.max(0,p)}
+  for(const e of EP)if(t>=e.s&&t<e.e){const p=Math.min(1,(t-e.s)/6,(e.e-t)/6);h+=e.up*Math.max(0,p)}
+  return h}
+// cabin CO2: rises from 14:30, crosses 3,900 at ~15:30; backup scrubber after the Commander is notified
+function co2At(t){let c=2300+Math.sin(t*.05)*60;
+  if(t>870){const fix=S.envAck?Math.max(S.envAck,930):99999;
+    const up=Math.min(1,(Math.min(t,fix)-870)/90)*1900; c+=up;
+    if(t>fix)c-=Math.min(up+200,(t-fix)/70*1600)}
+  return c}
+
+/* ===== State ===== */
+const DEF={now:425,ctx:{},issues:[],seq:1,sent:{},envAck:null};
+let S=Object.assign(JSON.parse(JSON.stringify(DEF)),store('s')||{});
+const save=()=>store('s',S);
+
+/* ===== Context requests (what the system can't explain) ===== */
+const ACT=['Unplanned physical work','Stress or tension','Fatigue','Caffeine','Medication taken'];
+const REQ={
+  sleep:{at:420,win:'00:40–06:25',t:'Sleep shorter than your baseline',
+    ev:()=>`${SLEEP.h} h asleep, ${SLEEP.wk} awakenings. Baseline ${BASE.sleep} h (−${Math.round((1-SLEEP.h/BASE.sleep)*100)}%).`,src:'Sleep sensor',
+    groups:[['Cause',['Noise','Light','Temperature','Worry or stress','Late work','Physical discomfort','Unknown']]]},
+  ex:{at:600,win:'09:00–09:42',t:'Exercise stopped at 70% of prescribed load',
+    ev:()=>'42 of 60 min completed. Countermeasure sessions protect bone and muscle.',src:'Exercise device log',
+    groups:[['Reason',['Felt tired','Pain or discomfort','Equipment issue','Schedule conflict','Other']]]},
+  hr1:{at:840,win:'13:10–13:50',t:'Heart rate above your baseline, no scheduled activity',
+    ev:()=>'+24 bpm for 40 min, heart rate variability −30%. Nothing on the crew schedule explains it.',src:'Smart-shirt ECG · crew schedule',
+    groups:[['What was happening',ACT],['Did you feel unwell?',['No','Yes']]]},
+  hr2:{at:1075,win:'17:20–17:45',t:'Heart rate above baseline again',
+    ev:()=>'+19 bpm for 25 min. Second unexplained episode today.',src:'Smart-shirt ECG · crew schedule',
+    groups:[['What was happening',ACT],['Did you feel unwell?',['No','Yes']]]},
+};
+const ENV_AT=950;
+const SYMS=['Headache','Fatigue','Dizziness','Chest pain','Palpitations','Shortness of breath','Nausea','Vision change','Back pain','Sleep problem','Other'];
+const RED=['Chest pain','Palpitations','Shortness of breath'];
+
+/* ===== Decision rules (transparent) ===== */
+function assess(id,c){
+  if(!c)return null;
+  const g0=c.a&&c.a[0], unwell=c.a&&c.a[1]==='Yes';
+  if(id==='sleep'){
+    if(!g0)return null;
+    const map={'Noise':'Use earplugs; quiet hours start 22:30.','Light':'Use the eye mask; check the crew-quarters light.','Temperature':'Ask the Commander to check the crew-quarters temperature.','Worry or stress':'A private conference with the ground psychologist can be booked; the CMO can also help.','Late work':'One short night is acceptable. Two in a row will be flagged to adjust the schedule.','Physical discomfort':'Log the discomfort as a symptom so it can be followed up.','Unknown':'Sleep will be re-checked tonight.'};
+    const lvl=g0==='Worry or stress'?'am':'gr';
+    return {lvl,res:map[g0],rule:'Sleep < 80% of baseline → ask for cause. Second short night in a row → schedule review.',issue:lvl==='am'?{t:'Sleep affected by stress',lvl:'am'}:null};
+  }
+  if(id==='ex'){
+    if(!g0)return null;
+    if(g0==='Pain or discomfort')return {lvl:'am',res:'Log where it hurts below (Report a symptom). The CMO will review before the next session.',rule:'Session < 80% of load with pain → follow-up before next session.',issue:{t:'Exercise stopped due to pain',lvl:'am'}};
+    if(g0==='Felt tired')return {lvl:'am',res:'Noted together with last night\'s short sleep. Tomorrow\'s load will be kept, and fatigue will be re-checked.',rule:'Short session + short sleep → fatigue follow-up.',issue:{t:'Fatigue: short sleep and reduced exercise',lvl:'am'}};
+    if(g0==='Equipment issue')return {lvl:'gr',res:'Equipment report created for the Commander. Make up the session when the device is checked.',rule:'Non-medical cause → no health action.'};
+    return {lvl:'gr',res:'No health action. Make up the missing 18 min this week if possible.',rule:'Non-medical cause → no health action.'};
+  }
+  // heart-rate episodes
+  if(!g0||!c.a[1])return null;
+  if(unwell)return {lvl:'rd',res:'Log what you felt (Report a symptom). With a raised heart rate, the CMO should examine you today.',rule:'Unexplained heart-rate rise + feeling unwell → CMO review today.',issue:{t:`Heart rate rise with symptoms (${REQ[id].win})`,lvl:'rd'}};
+  const other=id==='hr2'?S.ctx.hr1:null;
+  if(g0==='Unplanned physical work'||g0==='Caffeine')return {lvl:'gr',res:'Explained. No action needed.',rule:'Rise explained by activity or intake → no action.'};
+  if(g0==='Medication taken')return {lvl:'am',res:'Some medications raise heart rate. The CMO will check it against your medical record.',rule:'Rise after medication → CMO review (non-urgent).',issue:{t:'Heart rate rise after medication',lvl:'am'}};
+  if(g0==='Stress or tension'||g0==='Fatigue'){
+    if(other&&other.a&&['Stress or tension','Fatigue'].includes(other.a[0]))
+      return {lvl:'am',res:'Second episode today linked to stress or fatigue. A short check-in with the CMO is suggested, and workload can be adjusted.',rule:'2 episodes with the same non-activity cause in 24 h → CMO check-in.',issue:{t:'Repeated stress-related heart rate rises',lvl:'am'}};
+    return {lvl:'gr',res:'Plausible explanation. Slow breathing helps: 4 s in, 6 s out.',rule:'Single episode with a non-medical cause → monitor.'};
+  }
+  return null;
+}
+function assessSymptom(sy,sev){
+  const co2High=co2At(S.now)>3500;
+  if(RED.includes(sy)||(sy==='Dizziness'&&sev>=6))return {lvl:'rd',res:`Contact the CMO now. ${sy} needs an examination, not self-care.`,rule:'Red-flag symptom → immediate CMO contact.'};
+  if(sy==='Vision change')return {lvl:'am',res:'Vision changes are known in spaceflight (SANS). The CMO should bring the next eye exam forward.',rule:'Any vision change → CMO eye exam.'};
+  if(co2High&&['Headache','Fatigue','Dizziness','Nausea'].includes(sy))return {lvl:'am',res:'Cabin CO₂ is elevated right now and can cause this. Rest in a well-ventilated module and drink water. Follow up in 2 h.',rule:'Symptom consistent with elevated CO₂ → link to environment, follow up.'};
+  if(sev>=7)return {lvl:'am',res:'High severity: the CMO will review today. Self-care per the onboard checklist meanwhile.',rule:'Severity ≥ 7 → CMO review today.'};
+  return {lvl:'gr',res:'Self-care per the onboard checklist. Update the status below in 2 h.',rule:'Mild symptom → self-care and follow-up.'};
+}
+
+/* ===== Rendering ===== */
+function render(){
+  $('#clock').value=S.now;$('#clockTxt').textContent=fmt(S.now);
+  renderReqs();renderBody();renderVitals();renderChart();renderIssues();renderKpis();renderReport();renderSrcs();renderStatus();
+}
+const activeReqs=()=>Object.keys(REQ).filter(k=>S.now>=REQ[k].at);
+function pendingReqs(){return activeReqs().filter(k=>!assess(k,S.ctx[k]))}
+
+function renderReqs(){
+  const box=$('#reqs');
+  if(box.contains(document.activeElement)&&document.activeElement.tagName==='TEXTAREA')return;
+  const ids=activeReqs().slice().reverse();
+  let h='';
+  if(S.now>=ENV_AT){
+    const c=co2At(S.now);
+    h+=`<div class="req envn"><div class="rh"><span class="when">from ${fmt(ENV_AT)}</span><div style="flex:1"><div class="ttl">Crew-wide pattern: possible cabin cause</div>
+      <div class="ev">3 of 4 crew show fatigue markers at the same time. Cabin CO₂ <span class="mono">${Math.round(c).toLocaleString('en')} ppm</span> (${c>3500?'elevated':'returning to normal'}). This may not be about you.</div>
+      <div class="src">Cabin atmosphere (ECLSS) · crew wearables</div></div>
+      ${S.envAck?`<span class="tagok pill gr">CDR notified ${fmt(S.envAck)}</span>`:''}</div>
+      <div class="body">${S.envAck?'<div class="out am"><b>Commander switched to the backup CO₂ scrubber.</b> If you have a headache or feel tired, log it below; it will be linked to the cabin cause.</div>'
+        :'<button class="btn" data-envack>Notify Commander</button> <span class="sm mut">Same rule NASA describes: several crew affected at once → check the environment first.</span>'}</div></div>`;
+  }
+  for(const id of ids){
+    const r=REQ[id],c=S.ctx[id]||{a:[]},o=assess(id,S.ctx[id]);
+    const collapsed=o&&!(S.edit&&S.edit[id])&&o.lvl!=='rd';
+    h+=`<div class="req${o?' done':''}" data-id="${id}"><div class="rh"><span class="when">${r.win}</span><div style="flex:1;min-width:0"><div class="ttl">${esc(r.t)}</div>
+      <div class="ev">${esc(r.ev())}</div><div class="src">Source: ${esc(r.src)}</div></div>
+      ${o?`<span class="tagok pill ${o.lvl}">${o.lvl==='gr'?'EXPLAINED':o.lvl==='am'?'FOLLOW-UP':'CMO TODAY'}</span>`:'<span class="tagok pill am">NEEDS CONTEXT</span>'}</div>`;
+    if(collapsed){
+      h+=`<div class="body"><div class="out ${o.lvl}"><b>${esc(c.a[0]+(c.a[1]?' · felt unwell: '+c.a[1].toLowerCase():''))}${c.n?' — “'+esc(c.n)+'”':''}</b><br>${esc(o.res)}<div class="why">Rule: ${esc(o.rule)}</div></div><div style="margin-top:6px"><button class="lnk" data-edit>Edit context</button></div></div></div>`;
+      continue;
+    }
+    h+='<div class="body">'+r.groups.map((g,gi)=>`<div class="grp"><div class="gl">${g[0]}</div><div class="opts">${g[1].map(x=>`<button class="opt${c.a[gi]===x?' sel':''}" data-g="${gi}" data-v="${esc(x)}">${esc(x)}</button>`).join('')}</div></div>`).join('');
+    h+=`<textarea data-n placeholder="Add a short note (optional)">${esc(c.n)}</textarea>`;
+    if(o)h+=`<div class="out ${o.lvl}">${esc(o.res)}<div class="why">Rule: ${esc(o.rule)}</div></div>`;
+    h+='</div></div>';
+  }
+  box.innerHTML=h||'<div class="empty">No requests. The system asks only when data changes and the schedule can\'t explain it.</div>';
+  const p=pendingReqs().length;$('#reqCount').textContent=p?`${p} need${p>1?'':'s'} your context`:'all explained';
+}
+
+function renderChart(){
+  const X0=390,X1=1320,W=1000,L=46,R=14;const x=t=>L+(t-X0)/(X1-X0)*(W-L-R);
+  const hT=56,hB=176,y=v=>hB-(v-50)/(140-50)*(hB-hT);
+  const cT=200,cB=262,yc=v=>cB-(v-2000)/(4500-2000)*(cB-cT);
+  const now=Math.min(S.now,X1);let s='';
+  // lanes
+  s+=`<text x="4" y="22" font-size="10" fill="#8395B8">SCHEDULE</text><text x="4" y="${hT+8}" font-size="10" fill="#8395B8">HR</text><text x="4" y="${cT+8}" font-size="10" fill="#8395B8">CO₂</text>`;
+  for(const it of SCHEDULE){const w=it.ex?x(EX_END)-x(it.s):x(it.e)-x(it.s);
+    s+=`<rect x="${x(it.s)}" y="12" width="${x(it.e)-x(it.s)}" height="14" rx="3" fill="#1A2C52"/><rect x="${x(it.s)}" y="12" width="${w}" height="14" rx="3" fill="#2C4C8A"><title>${esc(it.l)}</title></rect>`;}
+  s+=`<rect x="${x(X0)}" y="${y(BASE.hrHi)}" width="${x(X1)-x(X0)}" height="${y(BASE.hrLo)-y(BASE.hrHi)}" fill="#1C3360"/>`;
+  // highlights for requests with windows on the HR lane
+  const marks=[['ex',540,EX_END],['hr1',790,830],['hr2',1040,1065]];
+  for(const [id,a,b] of marks){if(S.now<REQ[id].at)continue;const ok=!!assess(id,S.ctx[id]);const col=ok?'#3DDC97':'#FFB547';
+    s+=`<rect x="${x(a)}" y="${hT-14}" width="${x(b)-x(a)}" height="${hB-hT+14}" fill="${col}" opacity=".13"/><circle cx="${(x(a)+x(b))/2}" cy="${hT-6}" r="7" fill="${col}"/><text x="${(x(a)+x(b))/2}" y="${hT-2.5}" font-size="9" font-weight="700" text-anchor="middle" fill="#071226">${ok?'✓':'?'}</text>`;}
+  let d='';for(let t=X0;t<=now;t+=2)d+=(d?'L':'M')+x(t).toFixed(1)+','+y(hrAt(t)).toFixed(1);
+  s+=`<path d="${d}" fill="none" stroke="#4FD1FF" stroke-width="1.8"/>`;
+  // CO2 lane
+  s+=`<line x1="${x(X0)}" x2="${x(X1)}" y1="${yc(3900)}" y2="${yc(3900)}" stroke="#FF7A8C" stroke-dasharray="4 4" opacity=".6"/><text x="${x(X1)-2}" y="${yc(3900)-4}" font-size="10" text-anchor="end" fill="#FF7A8C">alert 3,900 ppm</text>`;
+  let dc='';for(let t=X0;t<=now;t+=4)dc+=(dc?'L':'M')+x(t).toFixed(1)+','+yc(Math.min(4500,co2At(t))).toFixed(1);
+  s+=`<path d="${dc}" fill="none" stroke="#FFB547" stroke-width="1.8"/>`;
+  // symptoms as markers
+  for(const i of S.issues.filter(i=>i.kind==='sym')){s+=`<path d="M${x(i.t0)},${cT-10} l5,8 h-10z" fill="${i.lvl==='rd'?'#FF7A8C':i.lvl==='am'?'#FFB547':'#3DDC97'}"><title>${esc(i.t)}</title></path>`}
+  s+=`<line x1="${x(now)}" x2="${x(now)}" y1="8" y2="${cB}" stroke="#E8EEF8" stroke-dasharray="2 4" opacity=".55"/><text x="${x(now)+4}" y="${cB}" font-size="10" fill="#C3D0E6">now</text>`;
+  for(let t=420;t<=1320;t+=60)s+=`<text x="${x(t)}" y="288" font-size="10" fill="#8395B8" text-anchor="middle">${fmt(t)}</text>`;
+  $('#chart').innerHTML=s;
+}
+
+function syncIssues(){
+  // issues created from context outcomes
+  for(const id of Object.keys(REQ)){const o=assess(id,S.ctx[id]);const ex=S.issues.find(i=>i.src===id);
+    if(o&&o.issue){if(!ex)S.issues.push({id:'i'+(S.seq++),src:id,kind:'ctx',t:o.issue.t,lvl:o.issue.lvl,t0:S.now,log:[],cmo:false});else{ex.t=o.issue.t;ex.lvl=o.issue.lvl}}
+    else if(ex&&!ex.log.length)S.issues=S.issues.filter(i=>i!==ex);}
+}
+function issueOpen(i){const l=i.log[i.log.length-1];return !(l&&l.s==='Resolved')}
+/* NASA Integrated Medical Model (IMM) groups its 100 conditions into three categories:
+   Environmental, Injury/Trauma and Medical illness. Each item is classified so it can be
+   compared with IMM incidence data and counted toward mission medical events. */
+function immOf(i){
+  const E='Environmental',J='Injury / Trauma',M='Medical illness';
+  if(i.kind==='sym'){const sy=i.t.split(' (')[0],env=i.co2>3500;
+    const m={'Headache':env?[E,'linked to cabin CO₂']:[M,'headache'],'Fatigue':env?[E,'linked to cabin CO₂']:[M,'sleep disorders'],'Sleep problem':[M,'sleep disorders'],
+      'Chest pain':[M,'cardiovascular'],'Palpitations':[M,'cardiovascular'],'Dizziness':env?[E,'linked to cabin CO₂']:[M,'cardiovascular / neurological'],
+      'Shortness of breath':env?[E,'linked to cabin CO₂']:[M,'respiratory'],'Nausea':[M,'gastrointestinal'],'Vision change':[M,'eye'],'Back pain':[J,'sprain / strain (back)']};
+    return m[sy]||['Unclassified','CMO to classify'];}
+  if(i.src==='ex')return /pain/i.test(i.t)?[J,'sprain / strain']:[M,'sleep disorders (fatigue)'];
+  if(i.src==='sleep')return [M,'sleep disorders'];
+  if(/stress/i.test(i.t))return [M,'anxiety / behavioural health'];
+  return [M,'cardiovascular'];
+}
+function renderIssues(){
+  const box=$('#issues');const open=S.issues.filter(issueOpen),closed=S.issues.filter(i=>!issueOpen(i));
+  if(!S.issues.length){box.innerHTML='<div class="empty">No open items.</div>';return}
+  const one=i=>{const last=i.log[i.log.length-1];
+    return `<div class="iss" data-iid="${i.id}"><div class="ih"><span class="dot ${i.lvl==='rd'?'r':i.lvl==='am'?'a':'g'}"></span><span class="it">${esc(i.t)}</span>${i.cmo?'<span class="pill">CMO notified</span>':''}</div>
+      <div class="ilog">opened ${fmt(i.t0||i.t)}${i.log.map(l=>` · ${fmt(l.at)} ${l.s.toLowerCase()}`).join('')}</div>
+      <div class="sm" style="margin-top:4px"><span class="pill" title="NASA Integrated Medical Model category">IMM · ${esc(immOf(i)[0])}</span> <span class="mut">${esc(immOf(i)[1])}</span></div>
+      ${issueOpen(i)?`<div class="opts">${['Improved','No change','Worsened','Resolved'].map(s=>`<button class="opt${last&&last.s===s?' sel':''}" data-st="${s}">${s}</button>`).join('')}${(i.lvl==='rd'||(last&&last.s==='Worsened'))&&!i.cmo?'<button class="btn red" style="padding:4px 10px;font-size:12px" data-cmo>Notify CMO</button>':''}</div>`:''}</div>`};
+  box.innerHTML=open.map(one).join('')+(closed.length?`<div class="sm mut" style="margin:6px 0">Resolved today</div>`+closed.map(one).join(''):'');
+}
+
+/* ===== vitals (simulated wearable streams) ===== */
+const isEx=t=>t>=540&&t<EX_END;
+function hrvAt(t){return Math.max(18,BASE.hrv-0.75*(hrAt(t)-BASE.hr)+Math.sin(t*.21)*2.5)}
+function spo2At(t){return 97.6+Math.sin(t*.023)*.35-(isEx(t)?.9:0)}
+function respAt(t){let r=13.6+Math.sin(t*.07)*.6+(isEx(t)?9:0)+Math.max(0,(co2At(t)-2400)/1800)*3.2;for(const e of EP)if(t>=e.s&&t<e.e)r+=2.5;return r}
+function tempAt(t){return 36.55+.3*Math.sin((t-660)/1440*2*Math.PI)+(isEx(t)?.45:0)}
+function spark(fn,lo,hi,col,band){const t1=S.now,t0=Math.max(390,t1-360),W=200,H=30;
+  const X=t=>(t-t0)/Math.max(1,t1-t0)*W,Y=v=>H-2-(Math.min(hi,Math.max(lo,v))-lo)/(hi-lo)*(H-4);
+  let d='';for(let t=t0;t<=t1;t+=3)d+=(d?'L':'M')+X(t).toFixed(1)+','+Y(fn(t)).toFixed(1);
+  const b=band?`<rect x="0" y="${Y(band[1])}" width="${W}" height="${Y(band[0])-Y(band[1])}" fill="#1C3360" opacity=".7"/>`:'';
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${b}<path d="${d}" fill="none" stroke="${col}" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg>`;}
+function renderVitals(){
+  const t=S.now,hr=hrAt(t),hv=hrvAt(t),sp=spo2At(t),rr=respAt(t),tp=tempAt(t);
+  const V=[
+    ['Heart rate','bpm',Math.round(hr),hr>BASE.hrHi+10?(isEx(t)?['b','Exercise']:['a','Above baseline']):['g','Within baseline'],spark(hrAt,45,135,'#4FD1FF',[BASE.hrLo,BASE.hrHi])],
+    ['HRV','ms',Math.round(hv),hv<38?['a','Lower than usual']:['g','Usual'],spark(hrvAt,15,70,'#8FA8FF',[44,60])],
+    ['SpO₂','%',sp.toFixed(0),sp<94?['r','Low']:['g','Normal'],spark(spo2At,90,100,'#3DDC97',[95,100])],
+    ['Breathing','/min',Math.round(rr),isEx(t)?['b','Exercise']:rr>20?['a','Faster than usual']:['g','Normal'],spark(respAt,8,28,'#FFB547',[12,18])],
+    ['Skin temp','°C',tp.toFixed(1),tp>37.6?['a','Elevated']:['g','Normal'],spark(tempAt,35.8,38,'#FF9FB0',[36.1,37.2])],
+    ['Blood pressure','mmHg',BP,['g','Normal'],'<div class="sm mut" style="margin-top:8px;font-size:11px">cuff · 06:50 · daily</div>'],
+  ];
+  $('#vitals').innerHTML=V.map(([k,u,v,[c,w],sp])=>`<div class="vit"><div class="k">${k}</div><div class="big">${v}<small>${u}</small></div><div class="w"><span class="dot ${c}"></span>${w}</div>${sp}</div>`).join('');
+}
+
+function renderKpis(){
+  const hr=hrAt(S.now),c=co2At(S.now);const exOk=S.now<600?null:false;
+  const hrState=hr>BASE.hrHi+10?['a','Above baseline']:['g','Within baseline'];
+  const K=[
+    ['Sleep',['a','Short night'],`${SLEEP.h} h of ${BASE.sleep} h baseline`],
+    ['Exercise',S.now<540?['b','Planned 09:00']:S.now<600?['b','In progress']:['a','Partial (70%)'],'treadmill + resistance'],
+    ['Cabin air',c>3900?['r','CO₂ high']:c>3200?['a','CO₂ rising']:['g','Normal'],`${Math.round(c).toLocaleString('en')} ppm`],
+    ['Radiation',['g','On track'],`${DOSE.tot} / ${DOSE.lim} mSv career`],
+  ];
+  $('#kpis').innerHTML=K.map(([k,[cl,v],n])=>`<div class="kpi"><div class="k">${k}</div><div class="v"><span class="dot ${cl}"></span>${v}</div><div class="n">${n}</div></div>`).join('');
+}
+
+function renderStatus(){
+  const open=S.issues.filter(issueOpen);const red=open.filter(i=>i.lvl==='rd'||(i.log.length&&i.log[i.log.length-1].s==='Worsened'));
+  const pend=pendingReqs().length;const env=S.now>=ENV_AT&&!S.envAck;
+  let cls='',badge='NOMINAL',t1='No action needed right now.',t2='Your data is within your baseline or explained by your notes.',act='';
+  if(red.length){cls='rd';badge='CONTACT CMO';t1='Contact Dr. K. Ito today.';t2=red[0].t+'.';act=red.some(i=>!i.cmo)?'<button class="btn red" data-cmoall>Notify CMO</button>':'<span class="pill">CMO notified</span>';}
+  else if(env){cls='am';badge='CABIN';t1='Cabin air may be affecting the crew.';t2='Several crew show the same change. Notify the Commander.';act='<button class="btn" data-envack>Notify Commander</button>';}
+  else if(pend){cls='am';badge='CONTEXT';t1=pend===1?'One change needs your context.':`${pend} changes need your context.`;t2='Sensors show what changed. Only you know why. One tap is usually enough.';}
+  else if(open.length){cls='am';badge='FOLLOW-UP';t1=`${open.length} open item${open.length>1?'s':''} to follow up.`;t2='Update the status when something changes.';}
+  const el=$('#status');el.className='status '+cls;$('#stBadge').textContent=badge;$('#stT1').textContent=t1;$('#stT2').textContent=t2;$('#stAct').innerHTML=act;
+}
+
+function renderReport(){
+  const L=[];const ctx=k=>{const c=S.ctx[k];if(!c||!c.a||!c.a[0])return 'no context yet';let t=c.a[0];if(c.a[1])t+='; felt unwell: '+c.a[1].toLowerCase();return t+(c.n?` ("${c.n}")`:'')};
+  L.push(`CREW HEALTH NOTE  ·  A. Rahimova  ·  Day 142  ·  ${fmt(S.now)}`);
+  L.push('');
+  L.push(`SLEEP   ${SLEEP.h} h (baseline ${BASE.sleep} h), ${SLEEP.wk} awakenings. Crew: ${ctx('sleep')}.`);
+  if(S.now>=600)L.push(`EXER    Stopped at 70% of prescribed load. Crew: ${ctx('ex')}.`);
+  for(const e of EP)if(S.now>=REQ[e.id].at)L.push(`HR      ${REQ[e.id].win} +${e.up} bpm vs baseline. Crew: ${ctx(e.id)}.`);
+  if(S.now>=ENV_AT)L.push(`ENV     CO2 above 3,900 ppm at ${fmt(ENV_AT)}, crew-wide fatigue markers.${S.envAck?' CDR notified '+fmt(S.envAck)+', backup scrubber on.':''}`);
+  const sy=S.issues.filter(i=>i.kind==='sym');
+  if(sy.length)L.push(...sy.map(i=>`SYMPT   ${fmt(i.t0)} ${i.t}${i.log.length?' → '+i.log[i.log.length-1].s.toLowerCase():''}.`));
+  const op=S.issues.filter(issueOpen);L.push(`OPEN    ${op.length?op.map(i=>`${i.t} [IMM: ${immOf(i)[0]}]`).join('; '):'none'}`);
+  L.push(`VITALS  BP ${BP} (morning) · radiation ${DOSE.tot}/${DOSE.lim} mSv`);
+  // machine-readable form for a CMO decision-support assistant
+  const J={schema:'solar-guardian/crew-health-note@1',crewMember:'A. Rahimova',missionDay:142,time:fmt(S.now),
+    sleep:{hours:SLEEP.h,baselineHours:BASE.sleep,awakenings:SLEEP.wk,crewContext:S.ctx.sleep&&S.ctx.sleep.a?S.ctx.sleep.a[0]||null:null},
+    deviations:[...(S.now>=600?[{type:'exercise',window:REQ.ex.win,completedPct:70,crewContext:S.ctx.ex&&S.ctx.ex.a?S.ctx.ex.a[0]||null:null}]:[]),
+      ...EP.filter(e=>S.now>=REQ[e.id].at).map(e=>({type:'heart_rate',window:REQ[e.id].win,deltaBpm:e.up,crewContext:S.ctx[e.id]&&S.ctx[e.id].a?S.ctx[e.id].a[0]||null:null,feltUnwell:S.ctx[e.id]&&S.ctx[e.id].a&&S.ctx[e.id].a[1]?S.ctx[e.id].a[1]==='Yes':null}))],
+    items:S.issues.map(i=>({title:i.t,kind:i.kind,level:{gr:'monitor',am:'follow_up',rd:'cmo_today'}[i.lvl],opened:fmt(i.t0),status:i.log.length?i.log[i.log.length-1].s:'Open',imm:{category:immOf(i)[0],group:immOf(i)[1]},cmoNotified:!!i.cmo})),
+    environment:{co2ppm:Math.round(co2At(S.now)),crewWidePattern:S.now>=ENV_AT,commanderNotified:S.envAck?fmt(S.envAck):null},
+    vitals:{bloodPressure:BP,radiationCareerMsv:DOSE.tot}};
+  $('#report').textContent=S.view==='json'?JSON.stringify(J,null,2):L.join('\n');
+  $('#viewTxt').classList.toggle('sel',S.view!=='json');$('#viewJson').classList.toggle('sel',S.view==='json');
+  $('#sendCmo').textContent=S.sent.cmo?`Sent to CMO ${fmt(S.sent.cmo)}`:'Send to CMO';
+  $('#sendGnd').textContent=S.sent.gnd?`Queued ${fmt(S.sent.gnd)} · arrives ${fmt(S.sent.gnd+14.5)}`:'Queue for flight surgeon';
+}
+
+function renderSrcs(){
+  const R=[
+    ['Wearable physiology','Smart shirt: ECG, heart rate, HRV, breathing (like CSA Astroskin)','2 min'],
+    ['Point-of-care','Medical kit: blood pressure (morning), labs when ordered','06:50'],
+    ['Sleep','Sleep sensor (actigraphy)','06:35'],
+    ['Countermeasures','Exercise device: prescribed vs completed load','09:42'],
+    ['Environment','Cabin atmosphere system: CO₂, pressure','1 min'],
+    ['Radiation','Personal dosimeter','5 min'],
+    ['Crew schedule','Planned activities, used to explain changes','06:00'],
+    ['Medical record','Allergies and medications (read by CMO tools)','—'],
+    ['Medical evidence','NASA Integrated Medical Model: 100-condition list used to classify each item','ref'],
+  ];
+  $('#srcs').innerHTML=R.map(r=>`<div class="s"><div>${r[0]}<small>${r[1]}</small></div><div class="st">● ${r[2]}</div></div>`).join('');
+}
+
+/* ===== Body systems ===== */
+const SYS={
+  heart:{n:'Heart & circulation',why:'In weightlessness, fluid shifts to the head and the heart works less. NASA tracks heart-rhythm problems as a spaceflight risk.',src:'Smart-shirt ECG · morning blood pressure',sy:['Chest pain','Palpitations','Dizziness']},
+  brain:{n:'Brain, sleep & mood',why:"Isolation, confinement and shifted schedules affect sleep, mood and attention. This is one of NASA's five hazards.",src:'Sleep sensor · crew notes',sy:['Headache','Fatigue','Sleep problem','Dizziness']},
+  eyes:{n:'Eyes & vision',why:"The fluid shift can change the eye and optic nerve (SANS), one of NASA's highest-priority risks.",src:'Crew report · weekly eye exam',sy:['Vision change','Headache']},
+  lungs:{n:'Lungs & cabin air',why:'CO₂ levels you cannot feel can cause headache, fatigue and poor concentration.',src:'Cabin atmosphere system · breathing rate',sy:['Shortness of breath','Headache','Fatigue']},
+  blood:{n:'Blood, immune & liver',why:'Immune changes are seen in long flights. Labs run on the point-of-care kit when the CMO orders them.',src:'Point-of-care labs',sy:['Fatigue','Nausea','Other']},
+  bones:{n:'Bones & muscles',why:'Without load, bone can lose 1–1.5% a month. Daily exercise is the countermeasure.',src:'Exercise device log',sy:['Back pain','Other']},
+  rad:{n:'Radiation dose',why:'Deep space adds about 1.8 mSv a day. The NASA career limit is 600 mSv.',src:'Personal dosimeter',sy:[]},
+};
+const SYMSYS={'Headache':'brain','Fatigue':'brain','Dizziness':'brain','Sleep problem':'brain','Chest pain':'heart','Palpitations':'heart','Shortness of breath':'lungs','Vision change':'eyes','Back pain':'bones','Nausea':'blood'};
+let SEL='heart';
+function sysState(){
+  const open=S.issues.filter(issueOpen);
+  const symOpen=k=>open.filter(i=>i.kind==='sym'&&SYMSYS[i.t.split(' (')[0]]===k);
+  const lvlOf=a=>a.some(i=>i.lvl==='rd'||(i.log.length&&i.log[i.log.length-1].s==='Worsened'))?'bad':a.length?'warn':'ok';
+  const sev=(...xs)=>xs.includes('bad')?'bad':xs.includes('warn')?'warn':'ok';
+  const has=k=>S.ctx[k]&&S.ctx[k].a&&S.ctx[k].a[0];
+  const st={},items={};
+  const hrIss=open.filter(i=>i.src==='hr1'||i.src==='hr2');
+  const hrPend=['hr1','hr2'].filter(k=>S.now>=REQ[k].at&&!assess(k,S.ctx[k]));
+  st.heart=sev(lvlOf(hrIss),hrPend.length?'warn':'ok',lvlOf(symOpen('heart')));
+  items.heart=[`Heart rate now ${Math.round(hrAt(S.now))} bpm (your baseline ${BASE.hrLo}–${BASE.hrHi}). Blood pressure ${BP} this morning.`];
+  for(const e of EP)if(S.now>=REQ[e.id].at){const c=S.ctx[e.id];items.heart.push(`${REQ[e.id].win}: +${e.up} bpm. `+(c&&c.a&&c.a[0]?`Your note: ${c.a[0]}${c.a[1]?', felt unwell: '+c.a[1].toLowerCase():''}.`:'Waiting for your context.'))}
+  const brIss=open.filter(i=>i.src==='sleep'||/stress|fatigue/i.test(i.t));
+  st.brain=sev(has('sleep')?'ok':'warn',lvlOf(brIss),lvlOf(symOpen('brain')));
+  items.brain=[`Sleep ${SLEEP.h} h (${SLEEP.on}–${SLEEP.off}), ${SLEEP.wk} awakenings; baseline ${BASE.sleep} h.`+(has('sleep')?` Your note: ${S.ctx.sleep.a[0]}.`:' Waiting for your context.')];
+  const c=co2At(S.now);
+  st.lungs=sev(c>3900?'bad':c>3200?'warn':'ok',lvlOf(symOpen('lungs')));
+  items.lungs=[`Cabin CO₂ ${Math.round(c).toLocaleString('en')} ppm${c>3900?' (above the 3,900 ppm alert)':c>3200?' (rising)':' (normal)'}.`];
+  if(S.envAck)items.lungs.push(`Commander notified at ${fmt(S.envAck)}; backup scrubber on.`);
+  st.eyes=lvlOf(symOpen('eyes'));items.eyes=['No vision changes reported today. Next routine eye exam: day 147.'];
+  st.blood=lvlOf(symOpen('blood'));items.blood=['Last labs on day 135: within your baseline. No labs ordered today.'];
+  const exIss=open.filter(i=>i.src==='ex');
+  st.bones=sev(S.now>=600&&!has('ex')?'warn':'ok',lvlOf(exIss),lvlOf(symOpen('bones')));
+  items.bones=[S.now<540?'Exercise planned at 09:00 (treadmill + resistance, 60 min).':S.now<600?'Exercise in progress.':'Exercise stopped at 70% of prescribed load (42 of 60 min).'+(has('ex')?` Your note: ${S.ctx.ex.a[0]}.`:' Waiting for your context.')];
+  st.rad='ok';items.rad=[`${DOSE.day} mSv today · ${DOSE.tot} of ${DOSE.lim} mSv career (${Math.round(DOSE.tot/DOSE.lim*100)}%).`,'No solar particle event in progress.'];
+  for(const k of Object.keys(SYS))for(const i of symOpen(k))items[k].push(`Symptom: ${i.t}, logged ${fmt(i.t0)}${i.log.length?', '+i.log[i.log.length-1].s.toLowerCase():''}.`);
+  return {st,items};
+}
+function bodySelect(k){SEL=k;renderBody();}
+function renderBody(){
+  const {st,items}=sysState();
+  BODY.setStatus(st,SEL,{heart:Math.round(hrAt(S.now))+' bpm',lungs:Math.round(respAt(S.now))+'/min',brain:'sleep '+SLEEP.h+' h',eyes:'no change',blood:'labs d135',bones:S.now>=600?'ex 70%':'ex 09:00',rad:DOSE.tot+' mSv'});
+  const k=SEL,d=SYS[k],s=st[k];
+  const word=s==='bad'?'Needs attention now':s==='warn'?'Watch':'Nominal';
+  $('#sysDetail').innerHTML=`<h4><span class="sd ${s}"></span>${d.n}</h4><div class="stl">${word}</div>
+    <div class="sec"><div class="gl">Today</div><ul>${items[k].map(x=>'<li>'+esc(x)+'</li>').join('')}</ul></div>
+    <div class="sec"><div class="gl">Why it matters in space</div><div class="sm" style="color:var(--ink2)">${esc(d.why)}</div></div>
+    <div class="sec"><div class="gl">Data source</div><div class="sm mut">${esc(d.src)}</div></div>
+    ${d.sy.length?`<div class="syschips">${d.sy.map(x=>`<button class="opt" data-sysym="${esc(x)}">Report: ${esc(x)}</button>`).join('')}</div>`:''}
+    <div class="sec"><div class="gl">All systems</div><div class="syschips" style="margin-top:0">${Object.keys(SYS).map(x=>`<button class="opt${x===k?' sel':''}" data-sys="${x}" style="font-size:12px;padding:4px 9px"><span class="sd ${st[x]}"></span>${SYS[x].n.split(/[ ,&]/)[0]}</button>`).join('')}</div></div>`;
+}
+
+const BODY=(()=>{
+  const noop={setStatus(){},resize(){}};
+  if(!window.THREE)return noop;
+  let rnd;try{rnd=new THREE.WebGLRenderer({antialias:true,alpha:true});}catch(e){return noop;}
+  if(!rnd.getContext())return noop;
+  const T=THREE,host=$('#body3d'),labHost=$('#bodyLab');
+  rnd.setPixelRatio(Math.min(2,window.devicePixelRatio||1));host.insertBefore(rnd.domElement,host.firstChild);
+  const scene=new T.Scene(),cam=new T.PerspectiveCamera(26,1,.05,30);
+  scene.add(new T.HemisphereLight(0xdfe8ff,0x1a1420,.75));
+  const key=new T.DirectionalLight(0xffffff,.85);key.position.set(1.5,2,2.5);scene.add(key);
+  const rim=new T.DirectionalLight(0x7fb4ff,.55);rim.position.set(-2,1,-2);scene.add(rim);
+  const fig=new T.Group();scene.add(fig);
+  const layers={skin:new T.Group(),bones:new T.Group(),organs:new T.Group(),vessels:new T.Group()};
+  Object.values(layers).forEach(g=>fig.add(g));
+  const parts={},pick=[];
+  const V=(x,y,z)=>new T.Vector3(x,y,z);
+  const std=(c,o={})=>new T.MeshStandardMaterial(Object.assign({color:c,roughness:.55,metalness:.05,emissive:0x000000},o));
+  const ctex=(w,h,fn)=>{const c=document.createElement('canvas');c.width=w;c.height=h;fn(c.getContext('2d'),w,h);const t=new T.CanvasTexture(c);t.wrapS=t.wrapT=T.RepeatWrapping;return t;};
+  function reg(sys,mesh){if(!sys)return mesh;mesh.userData.sys=sys;pick.push(mesh);(parts[sys]=parts[sys]||[]).push(mesh);return mesh;}
+  function mesh(geo,mat,layer,sys,x=0,y=0,z=0){const m=new T.Mesh(geo,mat);m.position.set(x,y,z);layers[layer].add(m);return reg(sys,m);}
+  function tube(points,r,mat,layer,sys,seg=40){const c=new T.CatmullRomCurve3(points);return mesh(new T.TubeGeometry(c,seg,r,8,false),mat,layer,sys);}
+  // a tapered segment between two points
+  function seg(a,b,r1,r2,mat,layer,sys,rs=14){const d=new T.Vector3().subVectors(b,a),len=d.length();const m=mesh(new T.CylinderGeometry(r2,r1,len,rs,1),mat,layer,sys);
+    m.position.copy(a).addScaledVector(d,.5);m.quaternion.setFromUnitVectors(V(0,1,0),d.normalize());return m;}
+  function ball(p,r,mat,layer,sys,sx=1,sy=1,sz=1){const m=mesh(new T.SphereGeometry(r,24,18),mat,layer,sys,p.x,p.y,p.z);m.scale.set(sx,sy,sz);return m;}
+
+  // ---- skin: fresnel "x-ray" shell ----
+  const skinM=new T.ShaderMaterial({uniforms:{c:{value:new T.Color(0xf0c2a8)},o:{value:1}},transparent:true,depthWrite:false,
+    vertexShader:'varying vec3 vN;varying vec3 vV;void main(){vN=normalize(normalMatrix*normal);vec4 mv=modelViewMatrix*vec4(position,1.);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}',
+    fragmentShader:'uniform vec3 c;uniform float o;varying vec3 vN;varying vec3 vV;void main(){float f=1.-abs(dot(vN,vV));gl_FragColor=vec4(c,(.05+.6*pow(f,2.2))*o);}'});
+  {const prof=[[.001,-.1],[.14,-.09],[.165,-.02],[.16,.06],[.138,.15],[.135,.2],[.15,.3],[.165,.4],[.172,.47],[.13,.53],[.06,.565],[.001,.57]].map(([r,y])=>new T.Vector2(r,y));
+   const torso=mesh(new T.LatheGeometry(prof,40),skinM,'skin',null);torso.scale.set(1,1,.62);}
+  seg(V(0,.54,-.005),V(0,.65,.0),.052,.048,skinM,'skin',null);
+  ball(V(0,.735,.005),.1,skinM,'skin',null,.9,1.13,1.02);
+  for(const s of [-1,1]){
+    ball(V(s*.185,.465,0),.055,skinM,'skin',null);
+    seg(V(s*.19,.46,0),V(s*.26,.19,.015),.05,.038,skinM,'skin',null);ball(V(s*.26,.19,.015),.038,skinM,'skin',null);
+    seg(V(s*.26,.19,.015),V(s*.3,-.05,.03),.037,.026,skinM,'skin',null);
+    ball(V(s*.312,-.11,.035),.04,skinM,'skin',null,.6,1.35,.32);
+    seg(V(s*.09,-.06,0),V(s*.1,-.48,.005),.08,.052,skinM,'skin',null);ball(V(s*.1,-.48,.005),.052,skinM,'skin',null);
+    seg(V(s*.1,-.48,.005),V(s*.1,-.86,-.005),.05,.03,skinM,'skin',null);
+    ball(V(s*.1,-.885,.035),.05,skinM,'skin',null,.75,.42,1.6);
+  }
+
+  // ---- skeleton ----
+  const boneM=std(0xeee3cb,{roughness:.6});
+  const skullM=std(0xeee3cb,{roughness:.55,transparent:true,opacity:.38,depthWrite:false});
+  ball(V(0,.745,-.002),.093,skullM,'bones','bones',.9,1.08,1.02);
+  mesh(new T.BoxGeometry(.085,.03,.075),boneM,'bones','bones',0,.665,.03);
+  for(let i=0;i<24;i++){const t=i/23,y=.6-t*.6,z=-.06-.018*Math.sin(t*Math.PI*1.6);
+    mesh(new T.CylinderGeometry(.015+t*.006,.015+t*.006,.014,10),boneM,'bones','bones',0,y,z);
+    mesh(new T.BoxGeometry(.008,.01,.024),boneM,'bones','bones',0,y,z-.02);}
+  for(let i=0;i<12;i++){const y=.455-i*.024,wf=.72+.28*Math.sin(Math.min(1,i/5)*Math.PI/2),front=i<7?1:i<10?.7:.4;
+    for(const s of [-1,1])tube([V(s*.016,y,-.062),V(s*.11*wf,y-.012,-.035),V(s*.13*wf,y-.03,.02),V(s*.095*wf*front,y-.045,.065*front),V(s*(i<7?.025:.06),y-.055,.075*front)],.0055,boneM,'bones','bones',24);}
+  mesh(new T.BoxGeometry(.026,.14,.012),boneM,'bones','bones',0,.39,.08);
+  for(const s of [-1,1]){
+    tube([V(s*.02,.5,.07),V(s*.09,.515,.05),V(s*.16,.495,0)],.007,boneM,'bones','bones',12);
+    ball(V(s*.115,.41,-.07),.06,boneM,'bones','bones',.9,1.1,.18);
+    seg(V(s*.18,.46,0),V(s*.258,.2,.012),.013,.011,boneM,'bones','bones');ball(V(s*.258,.2,.012),.016,boneM,'bones','bones');
+    seg(V(s*.256,.19,.008),V(s*.292,-.045,.02),.009,.007,boneM,'bones','bones');seg(V(s*.266,.19,.022),V(s*.306,-.045,.04),.009,.007,boneM,'bones','bones');
+    for(let f=0;f<4;f++)seg(V(s*(.296+f*.006),-.08,.02+f*.008),V(s*(.3+f*.009),-.17,.03+f*.01),.004,.003,boneM,'bones','bones',6);
+    mesh(new T.BoxGeometry(.025,.05,.04),boneM,'bones','bones',s*.31,-.075,.035);
+    ball(V(s*.085,.03,-.01),.075,boneM,'bones','bones',.85,.75,.35);
+    ball(V(s*.09,-.06,.005),.026,boneM,'bones','bones');
+    seg(V(s*.09,-.065,.005),V(s*.098,-.465,.008),.016,.013,boneM,'bones','bones');
+    ball(V(s*.099,-.475,.025),.022,boneM,'bones','bones',1,1,.7);
+    seg(V(s*.095,-.49,.006),V(s*.096,-.855,-.004),.013,.01,boneM,'bones','bones');seg(V(s*.115,-.49,-.008),V(s*.112,-.85,-.012),.006,.005,boneM,'bones','bones',8);
+    mesh(new T.BoxGeometry(.05,.03,.15),boneM,'bones','bones',s*.1,-.885,.035);
+  }
+  {const pv=mesh(new T.TorusGeometry(.075,.022,10,28),boneM,'bones','bones',0,-.01,.0);pv.rotation.x=Math.PI/2.4;pv.scale.set(1.15,1,.8);}
+
+  // ---- organs ----
+  const brainTex=ctex(256,128,(x,w,h)=>{x.fillStyle='#eab0b8';x.fillRect(0,0,w,h);x.strokeStyle='#b97482';x.lineWidth=2;
+    for(let i=0;i<70;i++){x.beginPath();let px=Math.random()*w,py=Math.random()*h;x.moveTo(px,py);for(let k=0;k<6;k++){px+=Math.random()*24-12;py+=Math.random()*16-8;x.quadraticCurveTo(px+8,py-6,px,py);}x.stroke();}});
+  ball(V(0,.758,-.008),.083,std(0xf0b6be,{map:brainTex,roughness:.75}),'organs','brain',.88,.84,1.06);
+  for(const s of [-1,1]){const e=ball(V(s*.031,.734,.084),.0135,std(0xfafafa,{roughness:.25}),'organs','eyes');
+    ball(V(s*.031,.734,.097),.0055,std(0x2a5d8a,{roughness:.2}),'organs','eyes');}
+  const lungTex=ctex(128,256,(x,w,h)=>{x.fillStyle='#f0a3ab';x.fillRect(0,0,w,h);x.strokeStyle='#c26a78';
+    for(let i=0;i<40;i++){x.lineWidth=Math.random()*2+.5;x.beginPath();x.moveTo(w/2,0);let px=w/2,py=0;for(let k=0;k<8;k++){px+=Math.random()*30-15;py+=h/9;x.lineTo(px,py);}x.stroke();}});
+  for(const s of [-1,1])ball(V(s*.062,.345,.005),.068,std(0xf2a6ae,{map:lungTex,roughness:.7,transparent:true,opacity:.92}),'organs','lungs',1,1.78,.95);
+  tube([V(0,.6,.035),V(0,.5,.03),V(0,.43,.02)],.009,std(0xd9c6c0),'organs','lungs',10);
+  for(const s of [-1,1])tube([V(0,.43,.02),V(s*.03,.41,.015),V(s*.055,.38,.01)],.0065,std(0xd9c6c0),'organs','lungs',10);
+  const heartM=std(0xb3263a,{roughness:.45});
+  const heart=new T.Group();heart.position.set(-.018,.305,.048);heart.rotation.set(.1,.25,.45);layers.organs.add(heart);
+  {const hb=new T.Mesh(new T.SphereGeometry(.045,24,18),heartM);hb.scale.set(1,1.15,.9);heart.add(hb);reg('heart',hb);
+   const ap=new T.Mesh(new T.ConeGeometry(.038,.06,20),heartM);ap.position.y=-.05;ap.rotation.z=Math.PI;heart.add(ap);reg('heart',ap);}
+  const artM=std(0xcc2233,{roughness:.4}),veinM=std(0x2f5fd0,{roughness:.4});
+  tube([V(-.005,.34,.045),V(.0,.405,.035),V(-.02,.42,.0),V(-.018,.38,-.04),V(-.012,.2,-.045),V(-.008,0,-.035)],.011,artM,'organs','heart',36);
+  tube([V(.022,.33,.045),V(.03,.36,.03)],.009,artM,'organs','heart',8);
+  tube([V(.022,-.0,-.025),V(.025,.15,-.03),V(.025,.29,.02),V(.012,.31,.04)],.0115,veinM,'organs','heart',24);
+  const liver=ball(V(.045,.195,.02),.1,std(0x7d2f24,{roughness:.5}),'organs','blood',1.1,.55,.7);liver.rotation.z=-.25;
+  ball(V(-.075,.165,-.03),.03,std(0x6a2a40),'organs','blood',1,.6,.6);
+  tube([V(-.03,.225,.05),V(-.075,.205,.045),V(-.088,.155,.045),V(-.06,.12,.05),V(-.015,.125,.05)],.024,std(0xd6897a,{roughness:.6}),'organs',null,20);
+  {const pts=[];for(let i=0;i<80;i++){const a=i*.55,r=.06*(1-i/95);pts.push(V(Math.cos(a)*r+.004*Math.sin(i),.06-i*.0009+.012*Math.sin(a*2),.045+Math.sin(a)*.012));}
+   tube(pts,.0125,std(0xe9a493,{roughness:.6}),'organs',null,240);}
+  tube([V(-.075,-.02,.04),V(-.088,.06,.04),V(-.08,.115,.045),V(0,.12,.06),V(.08,.115,.045),V(.088,.06,.04),V(.07,-.02,.04),V(.02,-.04,.045)],.02,std(0xc9806e,{roughness:.6}),'organs',null,60);
+  for(const s of [-1,1])ball(V(s*.058,.135,-.052),.024,std(0x8e3b2e),'organs',null,1,1.8,.8);
+  ball(V(0,-.035,.05),.025,std(0xe6c97a,{transparent:true,opacity:.85}),'organs',null);
+  const badge=mesh(new T.BoxGeometry(.034,.044,.008),std(0xffd27a,{metalness:.6,roughness:.3}),'skin','rad',.11,.41,.11);
+  mesh(new T.BoxGeometry(.03,.006,.009),std(0x2a3550),'skin','rad',.11,.425,.112);
+
+  // ---- vessels (arteries red, veins blue) ----
+  const vA=std(0xd02a3a,{roughness:.4}),vV=std(0x3a66d8,{roughness:.4});
+  for(const s of [-1,1]){
+    tube([V(s*.01,.405,.02),V(s*.02,.5,.03),V(s*.024,.62,.03),V(s*.03,.7,.04)],.0042,vA,'vessels','blood',16);
+    tube([V(s*.03,.42,.0),V(s*.12,.46,.0),V(s*.2,.43,.01),V(s*.262,.19,.03),V(s*.3,-.05,.045),V(s*.31,-.13,.05)],.0042,vA,'vessels','blood',30);
+    tube([V(s*.04,.43,-.01),V(s*.13,.47,-.01),V(s*.21,.44,-.005),V(s*.272,.19,.0),V(s*.31,-.05,.01)],.0046,vV,'vessels','blood',30);
+    tube([V(-.008,-.0,-.03),V(s*.06,-.04,.01),V(s*.095,-.25,.03),V(s*.1,-.48,-.012),V(s*.1,-.86,.0),V(s*.1,-.89,.07)],.0048,vA,'vessels','blood',36);
+    tube([V(.02,-.0,-.02),V(s*.07,-.05,.0),V(s*.108,-.25,.012),V(s*.112,-.48,-.03),V(s*.112,-.85,-.02)],.0052,vV,'vessels','blood',36);
+  }
+
+  // ---- status colouring, layers, labels ----
+  const COL={ok:0x3ddc97,warn:0xffb547,bad:0xff5470};let status={},sel=null,hover=null;
+  let VALS={};function setStatus(st,s,v){status=st;sel=s;VALS=v||{};renderLabels();}
+  const NAMES={brain:'Brain',eyes:'Eyes',lungs:'Lungs',heart:'Heart',blood:'Blood & liver',bones:'Skeleton',rad:'Dosimeter'};
+  const ANCH={brain:[V(0,.8,0),'L'],lungs:[V(.075,.4,.02),'L'],blood:[V(.06,.19,.04),'L'],bones:[V(.098,-.3,.01),'L'],eyes:[V(.031,.735,.095),'R'],heart:[V(-.03,.31,.06),'R'],rad:[V(.11,.41,.115),'R']};
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('class','blines');labHost.appendChild(svg);
+  const LAB={};
+  for(const k of Object.keys(ANCH)){const b=document.createElement('button');b.type='button';b.className='blab';b.dataset.s=k;labHost.appendChild(b);LAB[k]=b;
+    const ln=document.createElementNS('http://www.w3.org/2000/svg','line');svg.appendChild(ln);LAB[k].ln=ln;
+    const dot=document.createElementNS('http://www.w3.org/2000/svg','circle');dot.setAttribute('r','3');svg.appendChild(dot);LAB[k].dot=dot;}
+  labHost.addEventListener('click',e=>{const b=e.target.closest('.blab');if(b)bodySelect(b.dataset.s);});
+  function renderLabels(){for(const k of Object.keys(LAB)){const st=status[k]||'ok';LAB[k].innerHTML=`<span class="sd ${st}"></span>${NAMES[k]}${VALS[k]?' <small>'+VALS[k]+'</small>':''}`;LAB[k].classList.toggle('on',k===sel);}}
+  const LCOL={ok:'#3ddc97',warn:'#ffb547',bad:'#ff5470'},tmp=new T.Vector3();
+  function placeLabels(w,h){const side={L:[],R:[]};
+    for(const [k,[p,sd]] of Object.entries(ANCH)){const vis=k==='bones'?layers.bones.visible:k==='blood'?(layers.organs.visible||layers.vessels.visible):k==='rad'?layers.skin.visible:(k==='heart'||k==='lungs'||k==='brain'||k==='eyes')?layers.organs.visible:true;
+      tmp.copy(p);fig.localToWorld(tmp);tmp.project(cam);const x=(tmp.x*.5+.5)*w,y=(-tmp.y*.5+.5)*h;side[sd].push({k,x,y,vis});}
+    for(const sd of ['L','R']){const arr=side[sd].sort((a,b)=>a.y-b.y);let last=-99;arr.forEach(o=>{o.ly=Math.max(o.y,last+30);last=o.ly;});
+      arr.forEach(o=>{const b=LAB[o.k],bw=b.offsetWidth||90,lx=sd==='L'?10:w-10-bw;b.style.transform=`translate(${lx}px,${o.ly-12}px)`;b.style.display=o.vis?'':'none';
+        const ex=sd==='L'?lx+bw:lx,st=status[o.k]||'ok',c=o.k===sel?'#4fd1ff':LCOL[st];
+        b.ln.setAttribute('x1',ex);b.ln.setAttribute('y1',o.ly);b.ln.setAttribute('x2',o.x);b.ln.setAttribute('y2',o.y);b.ln.setAttribute('stroke',c);b.ln.style.display=o.vis?'':'none';
+        b.dot.setAttribute('cx',o.x);b.dot.setAttribute('cy',o.y);b.dot.setAttribute('fill',c);b.dot.style.display=o.vis?'':'none';});}}
+  document.querySelectorAll('#bodyLayers [data-l]').forEach(btn=>btn.addEventListener('click',()=>{const l=btn.dataset.l;layers[l].visible=!layers[l].visible;btn.classList.toggle('on',layers[l].visible);}));
+  // orbit + picking
+  const view={az:0,el:.05,r:4.15};let drag=null,lastDrag=-1e9;const ray=new T.Raycaster(),mv=new T.Vector2();
+  const pickAt=e=>{const r=host.getBoundingClientRect();mv.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(mv,cam);
+    const h=ray.intersectObjects(pick.filter(m=>{let o=m;while(o){if(o.visible===false)return false;o=o.parent;}return true;}),false)[0];return h?h.object.userData.sys:null;};
+  host.addEventListener('pointerdown',e=>{if(e.target.closest('.blab'))return;drag={x:e.clientX,y:e.clientY,m:0};host.setPointerCapture(e.pointerId);});
+  host.addEventListener('pointermove',e=>{if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.m+=Math.abs(dx)+Math.abs(dy);drag.x=e.clientX;drag.y=e.clientY;view.az-=dx*.01;view.el=Math.max(-.5,Math.min(.7,view.el+dy*.006));lastDrag=performance.now();}
+    else{hover=pickAt(e);host.style.cursor=hover?'pointer':'grab';}});
+  host.addEventListener('pointerup',e=>{if(drag&&drag.m<6){const s=pickAt(e);if(s)bodySelect(s);}drag=null;});
+  host.addEventListener('pointerleave',()=>{hover=null;});
+  host.addEventListener('wheel',e=>{e.preventDefault();view.r=Math.max(1.4,Math.min(5.5,view.r*(1+e.deltaY*.001)));},{passive:false});
+  host.addEventListener('dblclick',()=>{view.az=0;view.el=.05;view.r=4.15;});
+  function resize(){const w=host.clientWidth,h=host.clientHeight;if(!w||!h)return;rnd.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();}
+  new ResizeObserver(resize).observe(host);
+  let t0=performance.now();
+  function loop(now){requestAnimationFrame(loop);
+    if(!drag&&now-lastDrag>6000)view.az=Math.sin((now-t0)/7000)*.55;
+    cam.position.set(view.r*Math.cos(view.el)*Math.sin(view.az),-.06+view.r*Math.sin(view.el),view.r*Math.cos(view.el)*Math.cos(view.az));cam.lookAt(0,-.07,0);
+    const hr=hrAt(S.now),beat=1+.1*Math.max(0,Math.sin(now/1000*Math.PI*2*hr/60))**8;heart.scale.setScalar(beat);
+    for(const [k,ms] of Object.entries(parts)){const st=status[k]||'ok',isSel=k===sel,isHov=k===hover;
+      const pulse=st==='bad'?.55+.45*Math.sin(now/180):1;let col=COL[st],inten=st==='ok'?0:st==='warn'?.35:.75*pulse;
+      if(isSel&&st==='ok'){col=COL.ok;inten=.22;}if(isHov)inten+=.18;
+      ms.forEach(m=>{if(m.material.emissive){m.material.emissive.setHex(col);m.material.emissiveIntensity=inten;}});}
+    rnd.render(scene,cam);placeLabels(host.clientWidth,host.clientHeight);}
+  requestAnimationFrame(loop);renderLabels();
+  return {setStatus,resize};
+})();
+if(!document.querySelector('#body3d canvas')){const h=document.querySelector('#body3d');if(h)h.insertAdjacentHTML('beforeend','<div class="nobody">The 3D view needs WebGL and an internet connection. Use the system list on the right.</div>');}
+
+
+/* ===== live ECG (synthetic single lead) ===== */
+(function(){const cv=$('#ecg');if(!cv)return;const g=cv.getContext('2d');let w=0,h=0,x=0,ph=0,last=performance.now(),prevY=null;
+  function grid(){g.fillStyle='#060B18';g.fillRect(0,0,w,h);g.strokeStyle='rgba(61,220,151,.08)';g.lineWidth=1;
+    for(let i=0;i<w;i+=w/60){g.beginPath();g.moveTo(i,0);g.lineTo(i,h);g.stroke()}
+    for(let j=0;j<h;j+=h/6){g.beginPath();g.moveTo(0,j);g.lineTo(w,j);g.stroke()}}
+  function size(){const r=cv.getBoundingClientRect(),d=Math.min(2,devicePixelRatio||1);w=cv.width=Math.round(r.width*d);h=cv.height=Math.round(r.height*d);grid();x=0;prevY=null}
+  const G=(p,c,s,a)=>a*Math.exp(-((p-c)**2)/(2*s*s));
+  const wave=p=>G(p,.18,.025,.12)+G(p,.36,.008,-.12)+G(p,.4,.011,1)+G(p,.44,.01,-.25)+G(p,.66,.05,.28);
+  new ResizeObserver(size).observe(cv);
+  function step(now){requestAnimationFrame(step);if(!w)return;const dt=Math.min(.05,(now-last)/1000);last=now;const hr=hrAt(S.now);
+    const pxs=w/6,n=Math.max(1,Math.round(pxs*dt));
+    for(let i=0;i<n;i++){ph+=hr/60/pxs;if(ph>1)ph-=1;const y=h*.64-wave(ph)*h*.52+Math.sin(now/900)*1.2;
+      // erase a little ahead of the pen, redraw grid there
+      g.fillStyle='#060B18';g.fillRect(x+1,0,10,h);g.strokeStyle='rgba(61,220,151,.08)';g.lineWidth=1;
+      const step=w/60;for(let gx=Math.ceil((x+1)/step)*step;gx<x+11;gx+=step){g.beginPath();g.moveTo(gx,0);g.lineTo(gx,h);g.stroke()}
+      for(let j=0;j<h;j+=h/6){g.beginPath();g.moveTo(x+1,j);g.lineTo(x+11,j);g.stroke()}
+      g.strokeStyle='#3DDC97';g.lineWidth=Math.max(1.4,h/56);g.beginPath();g.moveTo(x-1,prevY==null?y:prevY);g.lineTo(x,y);g.stroke();prevY=y;
+      x+=1;if(x>=w){x=0;prevY=null}}
+    $('#ecgHr').textContent=Math.round(hr)+' bpm';}
+  requestAnimationFrame(step);})();
+
+/* ===== Events ===== */
+document.addEventListener('click',ev=>{
+  const b=ev.target.closest('button');if(!b)return;
+  if(b.dataset.sys){bodySelect(b.dataset.sys);return}
+  if(b.dataset.sysym){$('#sySel').value=b.dataset.sysym;$('#sySel').scrollIntoView({behavior:'smooth',block:'center'});$('#sySel').focus();return}
+  const rq=b.closest('.req');const id=rq&&rq.dataset.id;
+  if(b.dataset.g!=null&&id){const c=S.ctx[id]||{a:[],n:''};c.a=c.a||[];c.a[+b.dataset.g]=b.dataset.v;c.n=rq.querySelector('[data-n]')?rq.querySelector('[data-n]').value:c.n;c.at=S.now;S.ctx[id]=c;
+    const o=assess(id,c);if(o&&S.edit)delete S.edit[id];syncIssues();save();render();return}
+  if(b.hasAttribute('data-edit')&&id){S.edit=S.edit||{};S.edit[id]=true;save();render();return}
+  if(b.hasAttribute('data-envack')){S.envAck=S.now;save();render();toast('Commander notified: possible cabin cause.');return}
+  const is=b.closest('.iss');
+  if(b.dataset.st&&is){const i=S.issues.find(x=>x.id===is.dataset.iid);i.log.push({s:b.dataset.st,at:S.now});save();render();if(b.dataset.st==='Worsened')toast('Worsened: notify the CMO.');return}
+  if(b.hasAttribute('data-cmo')&&is){const i=S.issues.find(x=>x.id===is.dataset.iid);i.cmo=true;save();render();toast('Dr. K. Ito notified.');return}
+  if(b.hasAttribute('data-cmoall')){S.issues.filter(issueOpen).forEach(i=>{if(i.lvl==='rd'||(i.log.length&&i.log[i.log.length-1].s==='Worsened'))i.cmo=true});save();render();toast('Dr. K. Ito notified.');return}
+  if(b.id==='syAdd'){const sy=$('#sySel').value,sev=+$('#sySev').value,o=assessSymptom(sy,sev);
+    S.issues.push({id:'i'+(S.seq++),kind:'sym',t:`${sy} (${sev}/10)`,lvl:o.lvl,t0:S.now,log:[],cmo:false,note:$('#syNote').value,co2:Math.round(co2At(S.now))});
+    $('#syOut').innerHTML=`<div class="out ${o.lvl}">${esc(o.res)}<div class="why">Rule: ${esc(o.rule)}</div></div>`;$('#syNote').value='';save();render();return}
+  if(b.id==='viewTxt'||b.id==='viewJson'){S.view=b.id==='viewJson'?'json':'txt';save();renderReport();return}
+  if(b.id==='sendCmo'){S.sent.cmo=S.now;save();render();toast('Sent to Dr. K. Ito.');return}
+  if(b.id==='sendGnd'){S.sent.gnd=S.now;save();render();toast('Queued. One-way light time 14 min 32 s.');return}
+  if(b.id==='reset'){stop();S=JSON.parse(JSON.stringify(DEF));$('#syOut').innerHTML='';save();render();return}
+  if(b.id==='play'){playing?stop():start();return}
+});
+document.addEventListener('input',ev=>{
+  const t=ev.target;
+  if(t.id==='clock'){S.now=+t.value;save();render()}
+  if(t.id==='sySev')$('#sySevTxt').textContent=t.value;
+  if(t.hasAttribute('data-n')){const id=t.closest('.req').dataset.id;S.ctx[id]=S.ctx[id]||{a:[]};S.ctx[id].n=t.value;save();renderReport()}
+});
+let playing=null;
+function start(){$('#play').textContent='Pause';playing=setInterval(()=>{if(S.now>=1320)return stop();S.now+=5;save();render()},300)}
+function stop(){clearInterval(playing);playing=null;$('#play').textContent='Play'}
+
+$('#sySel').innerHTML=SYMS.map(s=>`<option>${s}</option>`).join('');
+syncIssues();render();
+</script>
+</body>
+</html>
