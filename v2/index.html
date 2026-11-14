@@ -211,6 +211,25 @@ body:not(.clin) .clin-only{display:none!important}
 @keyframes beat{0%{transform:scale(1);opacity:1}25%{transform:scale(.72);opacity:.75}100%{transform:scale(1);opacity:1}}
 .method{margin-top:18px;padding:12px 14px;border-left:4px solid var(--am);background:#1F1410;color:#F5E3CF;font-size:15px;border-radius:8px}
 
+/* 3D Earth link in the emergency screen */
+.emgwrap{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:22px;max-width:1320px;width:100%;margin:0 auto;padding:22px 18px;overflow:auto;flex:1;align-items:start}
+@media (max-width:980px){.emgwrap{grid-template-columns:1fr}}
+.emgwrap #emgBody{max-width:none;margin:0;padding:6px 0}
+.emglink{background:#0A1226;border:1px solid #2B3E6B;border-radius:14px;overflow:hidden}
+.emglink .lkh{display:flex;align-items:center;gap:6px;padding:10px 12px;border-bottom:1px solid #1F2E52;flex-wrap:wrap}
+.emglink .lkh b{font-size:12px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink2);margin-right:auto}
+.emglink .opt{font-size:12px;padding:4px 10px}
+#lk3d{position:relative;height:250px;background:radial-gradient(400px 200px at 50% 50%,#0F1E40,#040914 80%);overflow:hidden}
+#lk3d canvas{display:block;width:100%;height:100%}
+.lklab{position:absolute;left:0;top:0;font:600 11px Inter,sans-serif;color:#dfe7f7;background:rgba(8,13,26,.78);border:1px solid #2a3b60;border-radius:6px;padding:2px 7px;white-space:nowrap;pointer-events:none;transition:opacity .4s}
+.lkns{position:absolute;right:8px;bottom:6px;font-size:10px;color:#56658a}
+#lkStat{padding:12px 14px;font-size:14px;color:var(--ink2);min-height:120px}
+#lkStat .lkt{font-weight:700;color:var(--am);font-size:15px;margin-bottom:2px}
+#lkStat .lkt.ok{color:var(--gr)}
+#lkStat .lkw{margin-top:6px;color:#FFD3DA}
+#lkStat .bub{margin-top:8px;background:#0F2C48;border:1px solid #2B5D85;border-radius:10px;padding:8px 10px;color:var(--ink)}
+#lkStat .lkf{margin-top:10px;font-size:12px;color:var(--mut)}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -331,7 +350,7 @@ body:not(.clin) .clin-only{display:none!important}
   </section>
 </div>
 <div class="modal" id="guide" hidden><div class="mbox"><button class="x" id="guideX" aria-label="Close">×</button><div id="guideBody"></div></div></div>
-<div class="emg" id="emg" hidden><div class="emgtop"><b>EMERGENCY</b><span class="mono" id="emgClock">00:00</span><span class="al">CMO Dr. K. Ito and the Commander alerted · flight surgeon message queued</span><button class="btn sec" id="emgEnd">End emergency</button></div><div id="emgBody"></div></div>
+<div class="emg" id="emg" hidden><div class="emgtop"><b>EMERGENCY</b><span class="mono" id="emgClock">00:00</span><span class="al">CMO Dr. K. Ito and the Commander alerted · flight surgeon message queued</span><button class="btn sec" id="emgEnd">End emergency</button></div><div class="emgwrap"><div id="emgBody"></div><aside class="emglink"><div class="lkh"><b>Link to Earth</b><button class="opt" id="lkIss" data-lk="iss">ISS today</button><button class="opt" id="lkMars" data-lk="mars">Mars</button><button class="opt" id="lkFast" title="Demo: speed up the signal">⏩ ×60</button></div><div id="lk3d"><span class="lkns">not to scale</span></div><div id="lkStat"></div></aside></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -644,7 +663,7 @@ let EM=null,emTick=null,beatTimer=null,audio=null,beatOn=false;
 function emgOpen(){
   EM={mode:null,i:0,start:Date.now(),simT:S.now,note:''};
   S.issues.push({id:'i'+(S.seq++),kind:'emg',t:'Emergency: crew alert',lvl:'rd',t0:S.now,log:[],cmo:true});save();
-  $('#emg').hidden=false;emgRender();clearInterval(emTick);emTick=setInterval(emgClock,500);emgClock();render();
+  $('#emg').hidden=false;emgRender();LK.start('mars');clearInterval(emTick);emTick=setInterval(emgClock,500);emgClock();render();
 }
 function emgClock(){if(!EM)return;const s=Math.floor((Date.now()-EM.start)/1000);$('#emgClock').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
 function emgRender(){
@@ -670,7 +689,7 @@ function startBeat(){if(beatTimer)return;try{audio=audio||new (window.AudioConte
 function stopBeat(){clearInterval(beatTimer);beatTimer=null}
 function emgEnd(){
   if(EM){const it=S.issues.find(i=>i.kind==='emg'&&i.t0===EM.simT);if(it){it.t='Emergency: '+(EM.mode?EMG_T[EM.mode]:'crew alert');if(EM.note)it.note=EM.note;}}
-  EM=null;stopBeat();clearInterval(emTick);$('#emg').hidden=true;save();render();toast('Emergency logged for the CMO and the flight surgeon.');
+  EM=null;stopBeat();clearInterval(emTick);LK.stop();$('#emg').hidden=true;save();render();toast('Emergency logged for the CMO and the flight surgeon.');
 }
 
 /* ===== Live Earth–Mars light time (NASA Deep Space Network, DSN Now feed) ===== */
@@ -976,6 +995,105 @@ if(!document.querySelector('#body3d canvas')){const h=document.querySelector('#b
     $('#ecgHr').textContent=Math.round(hr)+' bpm';}
   requestAnimationFrame(step);})();
 
+/* ===== 3D Earth link: ISS today vs Mars (not to scale) ===== */
+const LK=(()=>{
+  let T,rnd,scene,cam,earth,mars,iss,ship,line,lineGeo,pkUp,pkDn,host,running=false,inited=false,ok=true;
+  let mode='mars',el=0,speed=1,last=0,elBase=0,tBase=0,issA=0,camPos,camTgt,lab={},ro;
+  const V=(x,y,z)=>new T.Vector3(x,y,z);
+  function tex(kind){const c=document.createElement('canvas');c.width=512;c.height=256;const g=c.getContext('2d');
+    if(kind==='earth'){g.fillStyle='#1d4f91';g.fillRect(0,0,512,256);
+      const land=[[90,80,60,38],[140,150,40,55],[260,70,70,40],[300,140,45,60],[400,90,55,35],[430,170,30,25]];
+      g.fillStyle='#3f8f5a';for(const [x,y,w,h] of land){g.beginPath();g.ellipse(x,y,w,h,Math.random(),0,7);g.fill()}
+      g.fillStyle='#c9b27a';for(const [x,y,w,h] of land){g.beginPath();g.ellipse(x+8,y+5,w*.35,h*.3,0,0,7);g.fill()}
+      g.fillStyle='rgba(255,255,255,.55)';for(let i=0;i<40;i++){g.beginPath();g.ellipse(Math.random()*512,Math.random()*256,20+Math.random()*40,4+Math.random()*6,0,0,7);g.fill()}
+      g.fillStyle='#eef4ff';g.fillRect(0,0,512,14);g.fillRect(0,242,512,14);}
+    else{g.fillStyle='#b5502c';g.fillRect(0,0,512,256);
+      g.fillStyle='rgba(90,30,15,.55)';for(let i=0;i<30;i++){g.beginPath();g.ellipse(Math.random()*512,Math.random()*256,15+Math.random()*50,6+Math.random()*20,Math.random(),0,7);g.fill()}
+      g.fillStyle='rgba(230,160,110,.35)';for(let i=0;i<25;i++){g.beginPath();g.arc(Math.random()*512,Math.random()*256,3+Math.random()*8,0,7);g.fill()}
+      g.fillStyle='#f3ece6';g.fillRect(0,0,512,10);}
+    const t=new T.CanvasTexture(c);return t;}
+  function label(txt){const d=document.createElement('div');d.className='lklab';d.textContent=txt;host.appendChild(d);return d}
+  function init(){
+    inited=true;host=$('#lk3d');
+    if(!window.THREE){ok=false;host.insertAdjacentHTML('beforeend','<div class="nobody">3D view needs WebGL and an internet connection.</div>');return}
+    T=window.THREE;
+    try{rnd=new T.WebGLRenderer({antialias:true,alpha:true});}catch(e){ok=false;return}
+    rnd.setPixelRatio(Math.min(2,devicePixelRatio||1));host.insertBefore(rnd.domElement,host.firstChild);
+    scene=new T.Scene();cam=new T.PerspectiveCamera(38,1,.1,600);
+    scene.add(new T.AmbientLight(0x8899bb,.5));const sun=new T.DirectionalLight(0xffffff,1.15);sun.position.set(-6,5,10);scene.add(sun);
+    const n=1200,p=new Float32Array(n*3);for(let i=0;i<n*3;i++)p[i]=(Math.random()-.5)*360;
+    const sg=new T.BufferGeometry();sg.setAttribute('position',new T.BufferAttribute(p,3));scene.add(new T.Points(sg,new T.PointsMaterial({color:0xa9bde0,size:.4})));
+    earth=new T.Mesh(new T.SphereGeometry(2,48,32),new T.MeshStandardMaterial({map:tex('earth'),roughness:.85}));earth.position.set(-14,0,0);scene.add(earth);
+    const atm=new T.Mesh(new T.SphereGeometry(2.14,48,32),new T.MeshBasicMaterial({color:0x4fd1ff,transparent:true,opacity:.13}));earth.add(atm);
+    mars=new T.Mesh(new T.SphereGeometry(1.15,40,28),new T.MeshStandardMaterial({map:tex('mars'),roughness:.95}));mars.position.set(16,0,-2);scene.add(mars);
+    // ISS: truss + solar arrays
+    iss=new T.Group();const wm=new T.MeshStandardMaterial({color:0xe8edf5,metalness:.3,roughness:.5}),sm=new T.MeshStandardMaterial({color:0xc9a24a,metalness:.4,roughness:.4,emissive:0x2a1d05});
+    iss.add(new T.Mesh(new T.BoxGeometry(.5,.06,.06),wm));const mod=new T.Mesh(new T.CylinderGeometry(.06,.06,.3,12),wm);mod.rotation.z=Math.PI/2;mod.position.y=-.07;iss.add(mod);
+    for(const x of[-.22,-.12,.12,.22]){const a=new T.Mesh(new T.BoxGeometry(.07,.01,.34),sm);a.position.set(x,0,0);iss.add(a)}
+    iss.scale.setScalar(1.3);scene.add(iss);
+    // spacecraft near Mars
+    ship=new T.Group();const hull=new T.Mesh(new T.CylinderGeometry(.18,.18,.9,16),wm);hull.rotation.z=Math.PI/2;ship.add(hull);
+    const nose=new T.Mesh(new T.ConeGeometry(.18,.35,16),wm);nose.rotation.z=-Math.PI/2;nose.position.x=.62;ship.add(nose);
+    for(const z of[-.45,.45]){const a=new T.Mesh(new T.BoxGeometry(.5,.02,.32),sm);a.position.set(-.1,0,z);ship.add(a)}
+    ship.position.set(13.2,.9,-1.2);ship.rotation.y=.4;scene.add(ship);
+    lineGeo=new T.BufferGeometry().setFromPoints([V(0,0,0),V(1,0,0)]);
+    line=new T.Line(lineGeo,new T.LineDashedMaterial({color:0x4fd1ff,dashSize:.5,gapSize:.35,transparent:true,opacity:.55}));scene.add(line);
+    const glow=c=>{const m=new T.Mesh(new T.SphereGeometry(.2,16,12),new T.MeshBasicMaterial({color:c}));const h=new T.Mesh(new T.SphereGeometry(.42,16,12),new T.MeshBasicMaterial({color:c,transparent:true,opacity:.25}));m.add(h);scene.add(m);return m};
+    pkUp=glow(0x4fd1ff);pkDn=glow(0x3ddc97);
+    lab.earth=label('Earth · Mission Control');lab.mars=label('Mars');lab.iss=label('ISS · 400 km');lab.ship=label('Our crew');
+    camPos=V(1,7,40);camTgt=V(1,0,-1);
+    ro=new ResizeObserver(resize);ro.observe(host);resize();
+  }
+  function resize(){if(!rnd)return;const w=host.clientWidth,h=host.clientHeight;if(!w||!h)return;rnd.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()}
+  function oneWay(){return mode==='mars'?LINK.s:0.6}
+  function endpoints(){const a=mode==='mars'?ship.position.clone():iss.position.clone();
+    const dir=a.clone().sub(earth.position).normalize();const b=earth.position.clone().add(dir.multiplyScalar(2.05));return [a,b]}
+  function place(d,obj,off,below){if(!obj)return;const v=obj.clone?obj.clone():obj;v.y+=off||0;v.project(cam);
+    const show=v.z<1&&v.x>-1.1&&v.x<1.1&&v.y>-1.1&&v.y<1.1;d.style.display=show?'':'none';
+    d.style.transform=`translate(${(v.x*.5+.5)*host.clientWidth}px,${(-v.y*.5+.5)*host.clientHeight}px) translate(-50%,${below?'60%':'-140%'})`}
+  function status(){
+    const ow=oneWay(),s=$('#lkStat');if(!s)return;let h='';
+    if(mode==='mars'){
+      if(el<ow)h=`<div class="lkt">Alert on its way to Earth</div><div>arrives in <b class="mono">${mmss(ow-el)}</b> · reply in <b class="mono">${mmss(2*ow-el)}</b></div><div class="lkw">Earth cannot help in time. Follow the onboard steps.</div>`;
+      else if(el<2*ow)h=`<div class="lkt ok">Earth received the alert</div><div>flight surgeon reply arrives in <b class="mono">${mmss(2*ow-el)}</b></div><div class="lkw">Keep following the onboard steps.</div>`;
+      else h=`<div class="lkt ok">Reply from Earth</div><div class="bub"><b>Flight surgeon</b> <span class="mut">(example, written ${mmss(el-ow)} ago)</span><br>Received your alert and data. Continue the onboard protocol, the CMO leads. We are reviewing the ECG.</div>`;
+      h+=`<div class="lkf">Delay: <b class="mono">${mmss(ow)}</b> one-way · ${LINK.live?'live from NASA Deep Space Network ('+esc(LINK.src)+')':'scenario value'}</div>`;
+    }else{
+      if(el<ow)h='<div class="lkt">Connecting to Mission Control…</div>';
+      else h=`<div class="lkt ok">Flight surgeon connected · delay under 1 s</div>`+(el>2.5?`<div class="bub"><b>Flight surgeon</b> <span class="mut">(example)</span><br>I can see the ECG from the shirt. Get the ultrasound from the medical kit, I’ll guide you step by step.</div>`:'');
+      h+='<div class="lkf">This is how real ISS cases were handled: the 2020 blood clot (treated from Earth for 90+ days) and the Crew-11 medical event in January 2026.</div>';
+    }
+    if(s.innerHTML!==h)s.innerHTML=h;
+    $('#lkIss').classList.toggle('sel',mode==='iss');$('#lkMars').classList.toggle('sel',mode==='mars');
+    $('#lkFast').textContent=speed>1?'⏩ ×60 on':'⏩ ×60';$('#lkFast').classList.toggle('sel',speed>1);$('#lkFast').style.display=mode==='mars'?'':'none';
+  }
+  function loop(now){
+    if(!running)return;requestAnimationFrame(loop);
+    const dt=Math.min(.1,(now-(last||now))/1000);last=now;el=elBase+(performance.now()-tBase)/1000*(mode==='mars'?speed:1);
+    status();if(!ok||!rnd)return;
+    earth.rotation.y+=dt*.15;mars.rotation.y+=dt*.1;
+    issA+=dt*.6;iss.position.set(earth.position.x+Math.cos(issA)*2.75,Math.sin(issA)*.8,Math.sin(issA)*2.75);iss.rotation.y=-issA;
+    ship.position.y=.9+Math.sin(now/1400)*.08;
+    const wantPos=mode==='mars'?V(1,7,40):V(-14+4.5,2.6,7.5),wantTgt=mode==='mars'?V(1,0,-1):V(-14,0,0);
+    camPos.lerp(wantPos,Math.min(1,dt*2.2));camTgt.lerp(wantTgt,Math.min(1,dt*2.2));cam.position.copy(camPos);cam.lookAt(camTgt);
+    const [a,b]=endpoints();lineGeo.setFromPoints([a,b]);line.computeLineDistances();
+    const ow=oneWay(),u=Math.min(1,el/ow),d=Math.min(1,Math.max(0,(el-ow)/ow));
+    pkUp.visible=u<1;pkUp.position.copy(a.clone().lerp(b,u));
+    pkDn.visible=el>=ow&&d<1;pkDn.position.copy(b.clone().lerp(a,d));
+    const pulse=1+.25*Math.sin(now/160);pkUp.scale.setScalar(pulse);pkDn.scale.setScalar(pulse);
+    rnd.render(scene,cam);
+    place(lab.earth,earth.position.clone(),2.4);place(lab.mars,mars.position.clone(),1.6);
+    place(lab.iss,iss.position.clone(),.35);place(lab.ship,ship.position.clone(),-.5,true);
+    lab.iss.style.opacity=mode==='iss'?1:0;lab.mars.style.opacity=mode==='mars'?1:.0;lab.ship.style.opacity=mode==='mars'?1:0;
+  }
+  return{
+    start(m){if(!inited)init();mode=m||mode;el=0;elBase=0;tBase=performance.now();speed=1;last=0;running=true;requestAnimationFrame(loop);setTimeout(resize,50)},
+    stop(){running=false},
+    setMode(m){mode=m;el=0;elBase=0;tBase=performance.now();speed=1},
+    fast(){elBase=el;tBase=performance.now();speed=speed>1?1:60},
+  };
+})();
+
 /* ===== Events ===== */
 document.addEventListener('click',ev=>{
   if(ev.target.id==='guide'){$('#guide').hidden=true;return}
@@ -984,6 +1102,8 @@ document.addEventListener('click',ev=>{
   if(b.id==='guideX'){$('#guide').hidden=true;return}
   if(b.id==='emgBtn'){emgOpen();return}
   if(b.id==='emgEnd'){emgEnd();return}
+  if(b.dataset.lk){LK.setMode(b.dataset.lk);return}
+  if(b.id==='lkFast'){LK.fast();return}
   if(EM&&b.dataset.em){EM.mode=b.dataset.em;EM.i=0;emgRender();return}
   if(EM&&b.hasAttribute('data-emnext')){EM.i++;emgRender();return}
   if(EM&&b.hasAttribute('data-emback')){if(EM.i>0)EM.i--;else EM.mode=null;emgRender();return}

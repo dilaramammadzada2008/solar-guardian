@@ -40,6 +40,7 @@ NASA does not have this as a finished app. NASA's Human Research Program, **Expl
 | Brief | v2 |
 |---|---|
 | "A crewmate feels a sharp pain in the chest and collapses. What should you do?" | **EMERGENCY** button: step-by-step guidance, one step per screen. **Awake with chest pain**: stop activity, help is alerted, measure vital signs, note the answers, no medicine without the CMO. **Not responding**: check breathing (10 s at most), chest compressions with a 110/min beat, AED. Includes CPR methods for weightlessness: Evetts-Russomano alone, handstand once the patient is restrained (DGLRM / ESAM guideline; the ISS protocol uses the handstand method). |
+| Real ISS cases (2020 blood clot treated from Earth for 90+ days; Crew-11 medical event, Jan 2026) relied on a doctor 1 second away | **Link to Earth, in 3D**, inside the emergency screen. *ISS today*: the flight surgeon connects in under a second and guides the crew. *Mars*: the alert travels for the live Earth–Mars light time (about 11 min one way), the reply needs as long again, and the app says "Earth cannot help in time, follow the onboard steps". Not to scale; flight surgeon messages are labelled as examples. |
 | "Astronauts are not doctors: explain how to take each measurement, why it matters, and what to do when a value is not normal" | **How to measure** guides for pulse, blood pressure, SpO₂, sleep, cabin CO₂ and the dosimeter. |
 | "Remind the crew to take measurements" | **Coming up** list with due items. |
 
