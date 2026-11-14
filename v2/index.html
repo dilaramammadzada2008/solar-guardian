@@ -251,6 +251,13 @@ body[data-tab=body] [data-tabs]:not([data-tabs~=body]){display:none!important}
 body[data-tab=log] [data-tabs]:not([data-tabs~=log]){display:none!important}
 body[data-tab=report] [data-tabs]:not([data-tabs~=report]){display:none!important}
 body[data-tab=data] [data-tabs]:not([data-tabs~=data]){display:none!important}
+.qhead{font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--mut);margin:0 0 8px}
+.qhead b{color:var(--ink)}
+.req.cur{border-color:var(--cy);box-shadow:0 0 0 1px rgba(79,209,255,.25)}
+.nexts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.nexts .gl{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--mut);width:100%}
+.actb{background:var(--cy);color:#05213A;border:0;border-radius:8px;padding:7px 12px;font-weight:600;font-size:13px}
+.actb.ok{background:var(--p3);color:var(--gr);border:1px solid var(--gr)}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -334,7 +341,7 @@ body[data-tab=data] [data-tabs]:not([data-tabs~=data]){display:none!important}
         <div class="pb" id="pmc"></div>
       </section>
 
-      <section class="panel" data-tabs="today report">
+      <section class="panel" data-tabs="report">
         <div class="ph"><h3>Open health items</h3><span class="sm mut">follow-up</span></div>
         <div class="pb" id="issues"></div>
       </section>
@@ -459,25 +466,26 @@ function assess(id,c){
   if(id==='sleep'){
     if(!g0)return null;
     const map={'Noise':'Use earplugs; quiet hours start 22:30.','Light':'Use the eye mask; check the crew-quarters light.','Temperature':'Ask the Commander to check the crew-quarters temperature.','Worry or stress':'A private conference with the ground psychologist can be booked; the CMO can also help.','Late work':'One short night is acceptable. Two in a row will be flagged to adjust the schedule.','Physical discomfort':'Log the discomfort as a symptom so it can be followed up.','Unknown':'Sleep will be re-checked tonight.'};
-    const lvl=g0==='Worry or stress'?'am':'gr';
-    return {lvl,res:map[g0],rule:'Sleep < 80% of baseline → ask for cause. Second short night in a row → schedule review.',issue:lvl==='am'?{t:'Sleep affected by stress',lvl:'am'}:null};
+    const lvl=(g0==='Worry or stress'||g0==='Physical discomfort')?'am':'gr';
+    const act=g0==='Worry or stress'?[['pmc','Write to the psychologist privately','psy']]:g0==='Physical discomfort'?[['sym','Log the discomfort','Other']]:null;
+    return {lvl,res:map[g0],rule:'Sleep < 80% of baseline → ask for cause. Second short night in a row → schedule review.',act,issue:lvl==='am'?{t:g0==='Worry or stress'?'Sleep affected by stress':'Sleep disturbed by physical discomfort',lvl:'am'}:null};
   }
   if(id==='ex'){
     if(!g0)return null;
-    if(g0==='Pain or discomfort')return {lvl:'am',res:'Log where it hurts below (Report a symptom). The CMO will review before the next session.',rule:'Session < 80% of load with pain → follow-up before next session.',issue:{t:'Exercise stopped due to pain',lvl:'am'}};
+    if(g0==='Pain or discomfort')return {lvl:'am',res:'Log where it hurts below (Report a symptom). The CMO will review before the next session.',rule:'Session < 80% of load with pain → follow-up before next session.',act:[['sym','Log where it hurts','Back pain']],issue:{t:'Exercise stopped due to pain',lvl:'am'}};
     if(g0==='Felt tired')return {lvl:'am',res:'Noted together with last night\'s short sleep. Tomorrow\'s load will be kept, and fatigue will be re-checked.',rule:'Short session + short sleep → fatigue follow-up.',issue:{t:'Fatigue: short sleep and reduced exercise',lvl:'am'}};
     if(g0==='Equipment issue')return {lvl:'gr',res:'Equipment report created for the Commander. Make up the session when the device is checked.',rule:'Non-medical cause → no health action.'};
     return {lvl:'gr',res:'No health action. Make up the missing 18 min this week if possible.',rule:'Non-medical cause → no health action.'};
   }
   // heart-rate episodes
   if(!g0||!c.a[1])return null;
-  if(unwell)return {lvl:'rd',res:'Log what you felt (Report a symptom). With a raised heart rate, the CMO should examine you today.',rule:'Unexplained heart-rate rise + feeling unwell → CMO review today.',issue:{t:`Heart rate rise with symptoms (${REQ[id].win})`,lvl:'rd'}};
+  if(unwell)return {lvl:'rd',res:'Log what you felt (Report a symptom). With a raised heart rate, the CMO should examine you today.',rule:'Unexplained heart-rate rise + feeling unwell → CMO review today.',act:[['sym','Tell us what you felt','Palpitations'],['cmo','Notify Dr. Ito']],issue:{t:`Heart rate rise with symptoms (${REQ[id].win})`,lvl:'rd'}};
   const other=id==='hr2'?S.ctx.hr1:null;
   if(g0==='Unplanned physical work'||g0==='Caffeine')return {lvl:'gr',res:'Explained. No action needed.',rule:'Rise explained by activity or intake → no action.'};
-  if(g0==='Medication taken')return {lvl:'am',res:'Some medications raise heart rate. The CMO will check it against your medical record.',rule:'Rise after medication → CMO review (non-urgent).',issue:{t:'Heart rate rise after medication',lvl:'am'}};
+  if(g0==='Medication taken')return {lvl:'am',res:'Some medications raise heart rate. The CMO will check it against your medical record.',rule:'Rise after medication → CMO review (non-urgent).',act:[['cmo','Tell Dr. Ito which medication']],issue:{t:'Heart rate rise after medication',lvl:'am'}};
   if(g0==='Stress or tension'||g0==='Fatigue'){
     if(other&&other.a&&['Stress or tension','Fatigue'].includes(other.a[0]))
-      return {lvl:'am',res:'Second episode today linked to stress or fatigue. A short check-in with the CMO is suggested, and workload can be adjusted.',rule:'2 episodes with the same non-activity cause in 24 h → CMO check-in.',issue:{t:'Repeated stress-related heart rate rises',lvl:'am'}};
+      return {lvl:'am',res:'Second episode today linked to stress or fatigue. A short check-in with the CMO is suggested, and workload can be adjusted.',rule:'2 episodes with the same non-activity cause in 24 h → CMO check-in.',act:[['cmo','Ask Dr. Ito for a check-in'],['pmc','Write to the psychologist privately','psy']],issue:{t:'Repeated stress-related heart rate rises',lvl:'am'}};
     return {lvl:'gr',res:'Plausible explanation. Slow breathing helps: 4 s in, 6 s out.',rule:'Single episode with a non-medical cause → monitor.'};
   }
   return null;
@@ -501,10 +509,27 @@ function render(){
 const activeReqs=()=>Object.keys(REQ).filter(k=>S.now>=REQ[k].at);
 function pendingReqs(){return activeReqs().filter(k=>!assess(k,S.ctx[k]))}
 
+function actsHTML(id,o){
+  if(!o||!o.act||!o.act.length)return'';
+  const D=S.acts||{};
+  return `<div class="nexts"><span class="gl">What to do now</span>${o.act.map(([k,label,arg],i)=>{const done=D[id+'|'+k];
+    return `<button class="actb${done?' ok':''}" data-act="${id}|${k}|${esc(arg||'')}">${done?'✓':(i+1)+'.'} ${esc(label)}</button>`}).join('')}</div>`;
+}
+function reqCompact(id){
+  const r=REQ[id],c=S.ctx[id]||{a:[]},o=assess(id,S.ctx[id]);
+  const tag=o.lvl==='gr'?'EXPLAINED':o.lvl==='am'?'FOLLOW-UP':'CMO TODAY';
+  return `<div class="req done" data-id="${id}"><div class="rh"><span class="when">${r.win}</span><div style="flex:1;min-width:0"><div class="ttl">${esc(r.t)}</div>
+    <div class="ev"><b>Your answer:</b> ${esc(c.a[0]+(c.a[1]?' · felt unwell: '+c.a[1].toLowerCase():''))}${c.n?' — “'+esc(c.n)+'”':''}</div></div>
+    <span class="tagok pill ${o.lvl}">${tag}</span></div>
+    <div class="body"><div class="out ${o.lvl}">${esc(o.res)}<div class="why">Rule: ${esc(o.rule)}</div></div>${actsHTML(id,o)}<div style="margin-top:6px"><button class="lnk" data-edit>Change answer</button></div></div></div>`;
+}
 function renderReqs(){
   const box=$('#reqs');
   if(box.contains(document.activeElement)&&document.activeElement.tagName==='TEXTAREA')return;
-  const ids=activeReqs().slice().reverse();
+  const E=S.edit||{};
+  const active=activeReqs();
+  const pend=active.filter(k=>E[k]||!assess(k,S.ctx[k])).sort((a,b)=>(E[b]?1:0)-(E[a]?1:0));
+  const answered=active.filter(k=>!pend.includes(k)).reverse();
   let h='';
   if(S.now>=ENV_AT){
     const c=co2At(S.now);
@@ -512,27 +537,24 @@ function renderReqs(){
       <div class="ev">3 of 4 crew show fatigue markers at the same time. Cabin CO₂ <span class="mono">${Math.round(c).toLocaleString('en')} ppm</span> (${c>3500?'elevated':'returning to normal'}). This may not be about you.</div>
       <div class="src">Cabin atmosphere (ECLSS) · crew wearables</div></div>
       ${S.envAck?`<span class="tagok pill gr">CDR notified ${fmt(S.envAck)}</span>`:''}</div>
-      <div class="body">${S.envAck?'<div class="out am"><b>Commander switched to the backup CO₂ scrubber.</b> If you have a headache or feel tired, log it below; it will be linked to the cabin cause.</div>'
-        :'<button class="btn" data-envack>Notify Commander</button> <span class="sm mut">Same rule NASA describes: several crew affected at once → check the environment first.</span>'}</div></div>`;
+      <div class="body">${S.envAck?'<div class="out am"><b>Commander switched to the backup CO₂ scrubber.</b> If you have a headache or feel tired, log it; it will be linked to the cabin cause.</div>'
+        :'<button class="btn" data-envack>Notify Commander</button> <span class="sm mut">Several crew affected at once → check the environment first (NASA CDSS concept).</span>'}</div></div>`;
   }
-  for(const id of ids){
-    const r=REQ[id],c=S.ctx[id]||{a:[]},o=assess(id,S.ctx[id]);
-    const collapsed=o&&!(S.edit&&S.edit[id])&&o.lvl!=='rd';
-    h+=`<div class="req${o?' done':''}" data-id="${id}"><div class="rh"><span class="when">${r.win}</span><div style="flex:1;min-width:0"><div class="ttl">${esc(r.t)}</div>
-      <div class="ev">${esc(r.ev())}</div><div class="src">Source: ${esc(r.src)}</div></div>
-      ${o?`<span class="tagok pill ${o.lvl}">${o.lvl==='gr'?'EXPLAINED':o.lvl==='am'?'FOLLOW-UP':'CMO TODAY'}</span>`:'<span class="tagok pill am">NEEDS CONTEXT</span>'}</div>`;
-    if(collapsed){
-      h+=`<div class="body"><div class="out ${o.lvl}"><b>${esc(c.a[0]+(c.a[1]?' · felt unwell: '+c.a[1].toLowerCase():''))}${c.n?' — “'+esc(c.n)+'”':''}</b><br>${esc(o.res)}<div class="why">Rule: ${esc(o.rule)}</div></div><div style="margin-top:6px"><button class="lnk" data-edit>Edit context</button></div></div></div>`;
-      continue;
-    }
+  if(pend.length){
+    const id=pend[0],r=REQ[id],c=S.ctx[id]||{a:[]};
+    h+=`<div class="qhead">Question <b>1</b> of <b>${pend.length}</b>${pend.length>1?` · ${pend.length-1} more after this one`:''}</div>`;
+    h+=`<div class="req cur" data-id="${id}"><div class="rh"><span class="when">${r.win}</span><div style="flex:1;min-width:0"><div class="ttl">${esc(r.t)}</div>
+      <div class="ev">${esc(r.ev())}</div><div class="src">Source: ${esc(r.src)}</div></div><span class="tagok pill am">NEEDS YOUR ANSWER</span></div>`;
     h+='<div class="body">'+r.groups.map((g,gi)=>`<div class="grp"><div class="gl">${g[0]}</div><div class="opts">${g[1].map(x=>`<button class="opt${c.a[gi]===x?' sel':''}" data-g="${gi}" data-v="${esc(x)}">${esc(x)}</button>`).join('')}</div></div>`).join('');
-    h+=`<textarea data-n placeholder="Add a short note (optional)">${esc(c.n)}</textarea>`;
-    if(o)h+=`<div class="out ${o.lvl}">${esc(o.res)}<div class="why">Rule: ${esc(o.rule)}</div></div>`;
-    h+='</div></div>';
+    h+=`<textarea data-n placeholder="Add a short note (optional)">${esc(c.n)}</textarea></div></div>`;
   }
-  box.innerHTML=h||'<div class="empty">No requests. The system asks only when data changes and the schedule can\'t explain it.</div>';
-  const p=pendingReqs().length;$('#reqCount').textContent=p?`${p} need${p>1?'':'s'} your context`:'all explained';
+  if(answered.length){
+    h+=`<div class="qhead" style="margin-top:14px">Answered today</div>`+answered.map(reqCompact).join('');
+  }
+  box.innerHTML=h||'<div class="empty">No questions. The app asks only when data changes and the crew schedule can\'t explain it.</div>';
+  const p=pend.length;$('#reqCount').textContent=p?`${p} question${p>1?'s':''} for you`:'all answered';
 }
+
 
 function renderChart(){
   const X0=390,X1=1320,W=1000,L=46,R=14;const x=t=>L+(t-X0)/(X1-X0)*(W-L-R);
@@ -676,7 +698,7 @@ function renderNext(){
   L.push({t:1230,l:'Put on the sleep sensor',g:'sleep'});
   L.push({t:1350,l:'Quiet hours'});
   const up=L.filter(x=>!x.done).sort((a,b)=>a.t-b.t),done=L.filter(x=>x.done);
-  $('#next').innerHTML=up.map(x=>`<div class="nx${x.t<now?' late':''}"><span class="mono">${fmt(x.t)}</span><span>${esc(x.l)}${x.t<now?' <b>· due</b>':''}</span>${x.g?`<button class="lnk" data-guide="${x.g}">how</button>`:''}</div>`).join('')
+  $('#next').innerHTML=up.map(x=>`<div class="nx${x.t<now?' late':''}"><span class="mono">${x.t>=1440?'tmrw '+fmt(x.t):fmt(x.t)}</span><span>${esc(x.l)}${x.t<now?' <b>· due</b>':''}</span>${x.g?`<button class="lnk" data-guide="${x.g}">how</button>`:''}</div>`).join('')
     +done.map(x=>`<div class="nx done"><span class="mono">${fmt(x.t)}</span><span>${esc(x.l)} · ${esc(x.done)}</span></div>`).join('')
     +'<div class="nx"><span class="mono">day 145</span><span>Private medical conference (flight surgeon)</span></div><div class="nx"><span class="mono">day 147</span><span>Weekly eye ultrasound with the CMO</span></div><div class="nx"><span class="mono">weekly</span><span>Food log sent to the dietitians</span></div>';
 }
@@ -1201,6 +1223,10 @@ document.addEventListener('click',ev=>{
   const rq=b.closest('.req');const id=rq&&rq.dataset.id;
   if(b.dataset.g!=null&&id){const c=S.ctx[id]||{a:[],n:''};c.a=c.a||[];c.a[+b.dataset.g]=b.dataset.v;c.n=rq.querySelector('[data-n]')?rq.querySelector('[data-n]').value:c.n;c.at=S.now;S.ctx[id]=c;
     const o=assess(id,c);if(o&&S.edit)delete S.edit[id];syncIssues();save();render();return}
+  if(b.dataset.act){const [aid,k,arg]=b.dataset.act.split('|');S.acts=S.acts||{};S.acts[aid+'|'+k]=true;
+    if(k==='sym'){S.tab='log';save();render();if(arg)$('#sySel').value=arg;$('#sySel').scrollIntoView({behavior:'smooth',block:'center'});$('#sySel').focus();return}
+    if(k==='pmc'){S.tab='log';S.pmcTo=arg||'fs';save();render();const t=$('#pmcTxt');if(t){t.scrollIntoView({behavior:'smooth',block:'center'});t.focus();}return}
+    if(k==='cmo'){const it=S.issues.find(i=>i.src===aid);if(it)it.cmo=true;save();render();toast('Dr. K. Ito notified.');return}}
   if(b.hasAttribute('data-edit')&&id){S.edit=S.edit||{};S.edit[id]=true;save();render();return}
   if(b.hasAttribute('data-envack')){S.envAck=S.now;save();render();toast('Commander notified: possible cabin cause.');return}
   const is=b.closest('.iss');
