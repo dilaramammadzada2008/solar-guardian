@@ -26,7 +26,7 @@ Built for the **NASA Space Apps Challenge 2026**, challenge *"Create Health Moni
 14. [Honest limitations](#14-honest-limitations)
 15. [Roadmap](#15-roadmap)
 16. [Technical overview](#16-technical-overview)
-17. [Use of AI tools](#17-use-of-ai-tools)
+17. [Use of Super Intelligence (SI) tools](#17-use-of-super-intelligence-si-tools)
 18. [References](#18-references)
 19. [Team and license](#19-team-and-license)
 
@@ -372,9 +372,28 @@ Medical records made by an autonomous system must be trustworthy afterwards: if 
 | `README.md` | This document |
 | `LICENSE` | MIT license |
 
-## 17. Use of AI tools
+## 17. Use of Super Intelligence (SI) tools
 
-As required by the NASA Space Apps rules, we disclose that AI tools were used during development. We used **Claude (Anthropic)** as an AI coding assistant to help write and debug code, to research the scientific background, and to draft documentation. The concept, design decisions, testing and presentation are the team's own; every value and claim in this document was checked against the code and the cited sources.
+NASA Space Apps requires every project submission to describe how Super Intelligence (SI) tools were used during development. ("Super Intelligence" is the term NASA now uses in place of "Artificial Intelligence".) This section is that description.
+
+**Tool used:** Claude (Anthropic), a large language model chat and coding assistant. No image, video or voice generation tools were used. All screenshots in the presentation are real captures of the running app.
+
+**How we used it:**
+
+| Stage | What the SI tool did | What the team did |
+|---|---|---|
+| Idea and scope | Discussed how the challenge could be interpreted | Chose the concept: personal health check plus an onboard guardian for crew, cabin and Sun |
+| Research | Helped find and summarise NASA, NOAA and peer-reviewed sources (Section 18) | Opened the sources and checked every number used in the app against them |
+| Code | Wrote and debugged HTML, CSS and JavaScript on request (simulation, 3D habitat, ECG, ledger, sensor) | Decided what each feature should do and tested it in the browser |
+| Medical protocol | Proposed the atrial fibrillation protocol based on NASA in-flight medical sources | Clicked through every step, found 9 logic errors (for example, "the arrhythmia cannot stop the moment you press a button") and had them fixed |
+| Documentation | Drafted this README and translated the presentation into Azerbaijani | Reviewed the text and asked for rewrites where the explanation was unclear |
+| Presentation | Built the slides and captured the app screenshots automatically | Chose the content, the order and the story for the judges |
+
+**What the SI tool did not do:**
+- Guardian itself does not use SI or machine learning. It is a set of explainable rules and statistics written in plain JavaScript, so every decision can be traced to a threshold and a source.
+- The NASA API key was never given to the SI tool or written into any file. It is entered only in the app and kept in the browser.
+
+**How we checked its work:** every value and claim in this document was checked against the code and the cited sources, and the app was tested by hand by the team.
 
 ## 18. References
 
