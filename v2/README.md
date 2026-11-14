@@ -35,18 +35,26 @@ NASA does not have this as a finished app. NASA's Human Research Program, **Expl
 | Not just numbers. What happened at that time? | **Context requests.** When data deviates from the personal baseline and the crew schedule can't explain it, the crew member is asked what was happening. The answer is stored with the data and goes into the report. |
 | No camera measurements | Removed |
 
+## Also from the official challenge brief (Brazilian Space Agency video)
+
+| Brief | v2 |
+|---|---|
+| "A crewmate feels a sharp pain in the chest and collapses. What should you do?" | **EMERGENCY** button: step-by-step guidance, one step per screen. **Awake with chest pain**: stop activity, help is alerted, measure vital signs, note the answers, no medicine without the CMO. **Not responding**: check breathing (10 s at most), chest compressions with a 110/min beat, AED. Includes CPR methods for weightlessness: Evetts-Russomano alone, handstand once the patient is restrained (DGLRM / ESAM guideline; the ISS protocol uses the handstand method). |
+| "Astronauts are not doctors: explain how to take each measurement, why it matters, and what to do when a value is not normal" | **How to measure** guides for pulse, blood pressure, SpO₂, sleep, cabin CO₂ and the dosimeter. |
+| "Remind the crew to take measurements" | **Coming up** list with due items. |
+
 ## Screen
 
 - **Status bar.** One state with one sentence: NOMINAL, CONTEXT, FOLLOW-UP, CABIN or CONTACT CMO.
-- **Summary tiles.** Heart, sleep, exercise, cabin air and radiation, with plain words first and numbers second.
-- **Live vitals.** Heart rate, HRV, SpO₂, breathing rate and skin temperature from the smart shirt, plus the morning blood pressure. Each shows a value, a plain-word status and a 6-hour sparkline against the 14-day baseline band.
-- **Live ECG.** A single-lead trace that follows the current heart rate (synthetic in the demo).
+- **Four plain-word cards.** Heart, sleep, cabin air and radiation: a word, one sentence, and *How to measure* links. No numbers on the main screen.
+- **Clinical details** (switch in the top bar, off by default). Shows the numbers for the medical officer: live vitals with 6-hour trends, a single-lead ECG, IMM categories and the machine-readable report. The astronaut's screen stays simple.
+- **Earth reply time, live.** Read from the public feed of NASA's Deep Space Network ([DSN Now](https://eyes.nasa.gov/dsn/dsn.html)). The round-trip light time to the Mars orbiters MRO, Mars Odyssey and TGO is halved, so the delay follows today's real Earth–Mars distance. If the feed cannot be reached, the scenario value (14 min 32 s) is used and labelled as such.
 - **Body overview.** A 3D anatomical model (three.js) with skin, skeleton, organs and vessels. Each body system is coloured from today's data: a system that needs watching glows amber, one that needs action pulses red. Tapping a system shows what happened today, why it matters in space, the data source, and quick links to report a symptom there.
 - **Context requests.** Each request shows what changed, the evidence, the data source, and structured answers. Every outcome shows the rule that produced it.
 - **Timeline.** Crew schedule, heart rate against the personal baseline, cabin CO₂, symptom markers, and whether context has been added.
 - **Open health items.** Follow-up with improved / no change / worsened / resolved. "Worsened" or a red flag offers *Notify CMO*.
 - **Report a symptom.** Symptom, onset and severity. Red-flag symptoms go to the CMO. A symptom that matches elevated CO₂ is linked to the cabin.
-- **Report to medical officer.** A structured note that the crew member reviews, then sends to the CMO or queues for the flight surgeon (14 min 32 s one-way).
+- **Report to medical officer.** A structured note that the crew member reviews, then sends to the CMO or queues for the flight surgeon (arrival time from the live Earth–Mars light time).
 
 ## Demo (about 90 s)
 
@@ -60,7 +68,8 @@ Use the **SIM** slider or **Play**. **Reset** restarts the day.
 
 ## Limitations
 
-- All data is simulated. Source names describe the type of system, not a live connection.
+- All health data is simulated. Source names describe the type of system (for example CSA's Bio-Monitor smart shirt), not a live connection. Only the Earth–Mars light time is live.
+- The DSN Now feed is public but not a documented API; its format may change, so the app falls back to the scenario value.
 - The decision rules are simple and transparent. Real thresholds would be set by flight surgeons. This is not a medical device.
 
 ## Use of Super Intelligence (SI) tools

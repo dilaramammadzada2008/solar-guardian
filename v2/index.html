@@ -169,6 +169,48 @@ button{cursor:pointer}
 .syschips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
 .syschips .opt{display:inline-flex;align-items:center;gap:6px}
 
+/* v3: simple main screen */
+body:not(.clin) .clin-only{display:none!important}
+.tog{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--mut);cursor:pointer;white-space:nowrap}
+.tog input{accent-color:var(--cy)}
+.emgbtn{background:var(--rd);color:#2A0710;border:0;border-radius:9px;padding:8px 16px;font-weight:700;letter-spacing:.5px;box-shadow:0 0 0 3px rgba(255,122,140,.18)}
+.kpi .m{font-size:13px;color:var(--ink2);margin-top:2px}
+.kpi .how{display:flex;flex-direction:column;align-items:flex-start;gap:2px;margin-top:6px}
+.kpi .how .lnk{font-size:12px}
+.nx{display:grid;grid-template-columns:70px 1fr auto;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px;align-items:center}
+.nx:last-child{border-bottom:0}
+.nx .mono{color:var(--mut);font-size:12px}
+.nx.late b{color:var(--am);font-weight:600}
+.nx.done{color:var(--mut)}
+.modal{position:fixed;inset:0;z-index:20;background:rgba(3,7,16,.72);display:flex;align-items:center;justify-content:center;padding:16px}
+.modal[hidden]{display:none}
+.mbox{background:var(--p1);border:1px solid var(--line2);border-radius:16px;max-width:620px;width:100%;max-height:90vh;overflow:auto;padding:20px 22px;position:relative}
+.mbox h3{margin:0 0 6px;font-size:20px}
+.mbox .x{position:absolute;right:12px;top:10px;background:none;border:0;color:var(--mut);font-size:22px}
+.gsec{margin-top:12px}.gsec .gl{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--cy);margin-bottom:4px}
+.gsec ol,.gsec ul{margin:0;padding-left:20px;color:var(--ink2)}.gsec li{margin-bottom:4px}.gsec p{margin:0;color:var(--ink2)}
+.emg{position:fixed;inset:0;z-index:30;background:#12050A;display:flex;flex-direction:column}
+.emg[hidden]{display:none}
+.emgtop{display:flex;align-items:center;gap:16px;padding:12px 18px;background:#3A0B16;border-bottom:2px solid var(--rd);flex-wrap:wrap}
+.emgtop b{color:var(--rd);letter-spacing:2px}
+.emgtop .mono{font-size:20px}
+.emgtop .al{color:#FFD3DA;font-size:14px;flex:1}
+#emgBody{max-width:860px;width:100%;margin:0 auto;padding:28px 18px;overflow:auto}
+.estep{font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#FF9FB0}
+.eq{font-size:34px;font-weight:700;line-height:1.2;margin:8px 0}
+.ex{font-size:19px;color:#F1D9DE;line-height:1.5}
+.eopts{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px}
+.ebig{flex:1;min-width:240px;background:#1E2C52;border:2px solid var(--line2);color:var(--ink);border-radius:14px;padding:22px 18px;font-size:19px;font-weight:600;text-align:left}
+.ebig.red{background:#4A1020;border-color:var(--rd)}
+.enav{display:flex;gap:10px;margin-top:26px;flex-wrap:wrap}
+.enav .btn{font-size:16px;padding:12px 18px}
+#emgBody textarea{width:100%;margin-top:16px;min-height:90px;background:#1A0C12;border:1px solid #5A2433;border-radius:10px;padding:10px 12px;color:var(--ink)}
+.beatwrap{display:flex;align-items:center;gap:20px;margin-top:20px;font-size:16px}
+.beatwrap b{font-size:28px;font-family:var(--mono)}
+.beat{width:90px;height:90px;border-radius:50%;background:var(--rd);animation:beat .545s infinite}
+@keyframes beat{0%{transform:scale(1);opacity:1}25%{transform:scale(.72);opacity:.75}100%{transform:scale(1);opacity:1}}
+.method{margin-top:18px;padding:12px 14px;border-left:4px solid var(--am);background:#1F1410;color:#F5E3CF;font-size:15px;border-radius:8px}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -179,8 +221,10 @@ button{cursor:pointer}
     <span>Crew member <b>A. Rahimova</b></span>
     <span>Mission <b>Mars transit · day 142</b></span>
     <span>CMO <b>Dr. K. Ito</b></span>
-    <span>Earth link <b class="mono">14:32</b> one-way</span>
+    <span>Earth reply <b class="mono" id="linkTxt">14:32</b> one-way · <span id="linkSrc"></span></span>
   </div>
+  <button class="emgbtn" id="emgBtn">EMERGENCY</button>
+  <label class="tog" title="Numbers, ECG and classification for the medical officer"><input type="checkbox" id="clinTog"> Clinical details</label>
   <div class="sim" title="Simulation control for the demo">
     SIM <input id="clock" type="range" min="390" max="1320" step="5" value="425"><b class="mono" id="clockTxt">07:05</b>
     <button id="play">Play</button><button id="reset">Reset</button>
@@ -194,24 +238,23 @@ button{cursor:pointer}
     <div class="act" id="stAct"></div>
   </div>
 
-  <div class="sechead"><span class="live">LIVE</span> Vitals · smart shirt and medical kit · compared with your 14-day baseline</div>
-  <div class="vitals" id="vitals"></div>
-  <div class="sechead">Today</div>
-  <div class="kpis" id="kpis" style="margin-bottom:18px"></div>
+  <div class="kpis" id="kpis" style="margin:14px 0 14px"></div>
+  <div class="clin-only"><div class="sechead"><span class="live">LIVE</span> Clinical details · smart shirt and medical kit · compared with the 14-day baseline</div>
+  <div class="vitals" id="vitals" style="margin-bottom:18px"></div></div>
 
   <div class="layout">
     <div class="stack">
       <section class="panel">
-        <div class="ph"><h3>Body overview</h3><span class="sm mut">tap an organ or a label</span></div>
-        <div class="bodygrid">
-          <div class="bodywrap"><div id="body3d"><div id="bodyLab"></div></div><div class="layers" id="bodyLayers"><button type="button" class="on" data-l="skin">Skin</button><button type="button" class="on" data-l="bones">Skeleton</button><button type="button" class="on" data-l="organs">Organs</button><button type="button" class="on" data-l="vessels">Vessels</button></div><div class="bodyhint">drag to turn · scroll to zoom</div></div>
-          <div class="pb sysd" id="sysDetail"></div>
-        </div>
-        <div class="ecg"><div class="ecgh"><span class="live">ECG</span><span>Lead I · smart shirt · 25 mm/s</span><span>HR <b id="ecgHr">--</b></span><span>Rhythm <b id="ecgRh">Sinus</b></span></div><canvas id="ecg"></canvas></div>
+        <div class="ph"><h3>Needs your input</h3><span class="sm mut" id="reqCount"></span></div>
+        <div class="pb" id="reqs"></div>
       </section>
       <section class="panel">
-        <div class="ph"><h3>Context requests</h3><span class="sm mut" id="reqCount"></span></div>
-        <div class="pb" id="reqs"></div>
+        <div class="ph"><h3>Body overview</h3><span class="sm mut">tap an organ or a label</span></div>
+        <div class="bodygrid">
+          <div class="bodywrap"><div id="body3d"><div id="bodyLab"></div></div><div class="layers clin-only" id="bodyLayers"><button type="button" class="on" data-l="skin">Skin</button><button type="button" class="on" data-l="bones">Skeleton</button><button type="button" class="on" data-l="organs">Organs</button><button type="button" class="on" data-l="vessels">Vessels</button></div><div class="bodyhint clin-only">drag to turn · scroll to zoom</div></div>
+          <div class="pb sysd" id="sysDetail"></div>
+        </div>
+        <div class="ecg clin-only"><div class="ecgh"><span class="live">ECG</span><span>Lead I · smart shirt · 25 mm/s</span><span>HR <b id="ecgHr">--</b></span><span>Rhythm <b id="ecgRh">Sinus</b></span></div><canvas id="ecg"></canvas></div>
       </section>
 
       <section class="panel tl">
@@ -229,6 +272,11 @@ button{cursor:pointer}
     </div>
 
     <div class="stack">
+      <section class="panel">
+        <div class="ph"><h3>Coming up</h3><span class="sm mut">reminders</span></div>
+        <div class="pb" id="next"></div>
+      </section>
+
       <section class="panel">
         <div class="ph"><h3>Open health items</h3><span class="sm mut">follow-up</span></div>
         <div class="pb" id="issues"></div>
@@ -250,7 +298,7 @@ button{cursor:pointer}
       </section>
 
       <section class="panel">
-        <div class="ph"><h3>Report to medical officer</h3><span class="opts"><button class="opt" id="viewTxt" style="font-size:12px;padding:3px 8px">Note</button><button class="opt" id="viewJson" style="font-size:12px;padding:3px 8px">Data</button></span></div>
+        <div class="ph"><h3>Report to medical officer</h3><span class="opts clin-only"><button class="opt" id="viewTxt" style="font-size:12px;padding:3px 8px">Note</button><button class="opt" id="viewJson" style="font-size:12px;padding:3px 8px">Data</button></span></div>
         <div class="pb">
           <div class="sm mut" style="margin-bottom:8px">Structured so the CMO's decision-support tools, such as an assistant like the NASA–Google CMO-DA, can read it directly.</div>
           <div class="report" id="report"></div>
@@ -282,6 +330,8 @@ button{cursor:pointer}
     </div>
   </section>
 </div>
+<div class="modal" id="guide" hidden><div class="mbox"><button class="x" id="guideX" aria-label="Close">×</button><div id="guideBody"></div></div></div>
+<div class="emg" id="emg" hidden><div class="emgtop"><b>EMERGENCY</b><span class="mono" id="emgClock">00:00</span><span class="al">CMO Dr. K. Ito and the Commander alerted · flight surgeon message queued</span><button class="btn sec" id="emgEnd">End emergency</button></div><div id="emgBody"></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -385,7 +435,8 @@ function assessSymptom(sy,sev){
 /* ===== Rendering ===== */
 function render(){
   $('#clock').value=S.now;$('#clockTxt').textContent=fmt(S.now);
-  renderReqs();renderBody();renderVitals();renderChart();renderIssues();renderKpis();renderReport();renderSrcs();renderStatus();
+  document.body.classList.toggle('clin',!!S.clin);$('#clinTog').checked=!!S.clin;
+  renderReqs();renderBody();renderVitals();renderChart();renderIssues();renderKpis();renderNext();renderReport();renderSrcs();renderStatus();
 }
 const activeReqs=()=>Object.keys(REQ).filter(k=>S.now>=REQ[k].at);
 function pendingReqs(){return activeReqs().filter(k=>!assess(k,S.ctx[k]))}
@@ -467,6 +518,7 @@ function immOf(i){
       'Chest pain':[M,'cardiovascular'],'Palpitations':[M,'cardiovascular'],'Dizziness':env?[E,'linked to cabin CO₂']:[M,'cardiovascular / neurological'],
       'Shortness of breath':env?[E,'linked to cabin CO₂']:[M,'respiratory'],'Nausea':[M,'gastrointestinal'],'Vision change':[M,'eye'],'Back pain':[J,'sprain / strain (back)']};
     return m[sy]||['Unclassified','CMO to classify'];}
+  if(i.kind==='emg')return [M,'cardiovascular emergency'];
   if(i.src==='ex')return /pain/i.test(i.t)?[J,'sprain / strain']:[M,'sleep disorders (fatigue)'];
   if(i.src==='sleep')return [M,'sleep disorders'];
   if(/stress/i.test(i.t))return [M,'anxiety / behavioural health'];
@@ -478,7 +530,7 @@ function renderIssues(){
   const one=i=>{const last=i.log[i.log.length-1];
     return `<div class="iss" data-iid="${i.id}"><div class="ih"><span class="dot ${i.lvl==='rd'?'r':i.lvl==='am'?'a':'g'}"></span><span class="it">${esc(i.t)}</span>${i.cmo?'<span class="pill">CMO notified</span>':''}</div>
       <div class="ilog">opened ${fmt(i.t0||i.t)}${i.log.map(l=>` · ${fmt(l.at)} ${l.s.toLowerCase()}`).join('')}</div>
-      <div class="sm" style="margin-top:4px"><span class="pill" title="NASA Integrated Medical Model category">IMM · ${esc(immOf(i)[0])}</span> <span class="mut">${esc(immOf(i)[1])}</span></div>
+      <div class="sm clin-only" style="margin-top:4px"><span class="pill" title="NASA Integrated Medical Model category">IMM · ${esc(immOf(i)[0])}</span> <span class="mut">${esc(immOf(i)[1])}</span></div>
       ${issueOpen(i)?`<div class="opts">${['Improved','No change','Worsened','Resolved'].map(s=>`<button class="opt${last&&last.s===s?' sel':''}" data-st="${s}">${s}</button>`).join('')}${(i.lvl==='rd'||(last&&last.s==='Worsened'))&&!i.cmo?'<button class="btn red" style="padding:4px 10px;font-size:12px" data-cmo>Notify CMO</button>':''}</div>`:''}</div>`};
   box.innerHTML=open.map(one).join('')+(closed.length?`<div class="sm mut" style="margin:6px 0">Resolved today</div>`+closed.map(one).join(''):'');
 }
@@ -507,16 +559,131 @@ function renderVitals(){
   $('#vitals').innerHTML=V.map(([k,u,v,[c,w],sp])=>`<div class="vit"><div class="k">${k}</div><div class="big">${v}<small>${u}</small></div><div class="w"><span class="dot ${c}"></span>${w}</div>${sp}</div>`).join('');
 }
 
+/* ===== Plain-word cards (main screen) ===== */
 function renderKpis(){
-  const hr=hrAt(S.now),c=co2At(S.now);const exOk=S.now<600?null:false;
-  const hrState=hr>BASE.hrHi+10?['a','Above baseline']:['g','Within baseline'];
+  const c=co2At(S.now),{st}=sysState();
+  const cls={ok:'g',warn:'a',bad:'r'};
+  const pend=['hr1','hr2'].some(k=>S.now>=REQ[k].at&&!assess(k,S.ctx[k]));
+  const heart=st.heart==='bad'?['Needs a check today','You reported symptoms with a faster heart.']
+    :pend?['A change to explain','Your heart was faster than usual. Tell us why above.']
+    :st.heart==='warn'?['Being followed up','See your open items.']:['Normal for you','Within your usual range.'];
   const K=[
-    ['Sleep',['a','Short night'],`${SLEEP.h} h of ${BASE.sleep} h baseline`],
-    ['Exercise',S.now<540?['b','Planned 09:00']:S.now<600?['b','In progress']:['a','Partial (70%)'],'treadmill + resistance'],
-    ['Cabin air',c>3900?['r','CO₂ high']:c>3200?['a','CO₂ rising']:['g','Normal'],`${Math.round(c).toLocaleString('en')} ppm`],
-    ['Radiation',['g','On track'],`${DOSE.tot} / ${DOSE.lim} mSv career`],
+    ['Heart',st.heart,heart[0],heart[1],`${Math.round(hrAt(S.now))} bpm · BP ${BP} · usual ${BASE.hrLo}–${BASE.hrHi}`,[['pulse','Pulse'],['bp','Blood pressure']]],
+    ['Sleep','warn','Short night',`About ${(BASE.sleep-SLEEP.h).toFixed(1)} h less than usual.`,`${SLEEP.h} h · ${SLEEP.wk} awakenings · usual ${BASE.sleep} h`,[['sleep','Sleep']]],
+    ['Cabin air',c>3900?'bad':c>3200?'warn':'ok',c>3900?'CO₂ high':c>3200?'CO₂ rising':'Normal',c>3900?'Can cause headache and tiredness. Commander informed.':c>3200?'Watch for headache or tiredness.':'Nothing to do.',`${Math.round(c).toLocaleString('en')} ppm · alert 3,900`,[['co2','CO₂ monitor']]],
+    ['Radiation','ok','On track','Normal for this mission. No solar storm.',`${DOSE.day} mSv today · ${DOSE.tot}/${DOSE.lim} mSv career`,[['rad','Dosimeter']]],
   ];
-  $('#kpis').innerHTML=K.map(([k,[cl,v],n])=>`<div class="kpi"><div class="k">${k}</div><div class="v"><span class="dot ${cl}"></span>${v}</div><div class="n">${n}</div></div>`).join('');
+  $('#kpis').innerHTML=K.map(([k,s,w,m,n,g])=>`<div class="kpi"><div class="k">${k}</div><div class="v"><span class="dot ${cls[s]}"></span>${w}</div><div class="m">${m}</div><div class="n clin-only">${n}</div><div class="how">${g.map(([id,l])=>`<button class="lnk" data-guide="${id}">How to measure: ${l}</button>`).join('')}</div></div>`).join('');
+}
+
+/* ===== How to measure (astronauts are not doctors) ===== */
+const GUIDES={
+  pulse:{t:'Pulse (heart rate)',how:['Rest for 5 minutes, secured in place. No exercise or coffee in the last 30 minutes.','The smart shirt measures it for you. To check by hand: two fingers on the inside of the wrist below the thumb.','Count the beats for 30 seconds and double it. Feel if the beats are regular.'],
+    why:'Your heart works differently without gravity. A pulse that is unusually high at rest can be the first sign of stress, illness or a rhythm problem.',
+    bad:['Above 120 at rest, or irregular: tell the CMO today.','With chest pain, fainting or shortness of breath: press Emergency.']},
+  bp:{t:'Blood pressure',how:['Rest 5 minutes. No exercise, coffee or talking just before.','Cuff on the bare upper arm, at heart level, arm supported.','Take two readings one minute apart. The app saves both.'],
+    why:'Fluids shift to the head in weightlessness. Blood pressure shows how your heart and vessels adapt, and protects you when you return to gravity.',
+    bad:['140/90 or higher twice, or below 90/60 with dizziness: tell the CMO.','180/120 or higher, or with chest pain: press Emergency.']},
+  spo2:{t:'Blood oxygen (SpO₂)',how:['Warm your hand first.','Clip the sensor on your index finger and keep still.','Wait about 30 seconds until the number stops changing.'],
+    why:'Shows how well oxygen gets into your blood. A low value can mean a lung problem or a cabin air problem.',
+    bad:['Below 94%: measure again.','Below 92%, or short of breath: tell the CMO now and check the cabin air.']},
+  sleep:{t:'Sleep',how:['Wear the sleep sensor (wrist or shirt) all night.','In the morning, answer one question: how did you sleep?','Keep the sleep station dark and quiet: eye mask, earplugs.'],
+    why:'Crews often sleep 1–2 hours less in space. Too little sleep slows reactions, which matters for safety-critical tasks.',
+    bad:['Less than 6 hours two nights in a row: the app suggests a schedule review.','Cannot sleep because of worry or pain: tell the CMO.']},
+  co2:{t:'Cabin CO₂',how:['The cabin system measures CO₂ all the time.','Clip the personal CO₂ monitor to your collar or near your sleep station. NASA tested these on the ISS because CO₂ pockets can form.','Check the reading when you have a headache or feel unusually tired.'],
+    why:'Too much CO₂ causes headache, tiredness and poor concentration, often before you notice it.',
+    bad:['Headache with high CO₂: move to a well-ventilated module and tell the Commander.','Several crew with the same symptoms: the app checks the cabin first.']},
+  rad:{t:'Radiation dose',how:['Wear your personal dosimeter at all times, in the chest pocket.','It syncs by itself. No action needed.'],
+    why:'Deep space adds about 1.8 mSv a day. NASA limits a career to 600 mSv.',
+    bad:['Solar storm warning: go to the shelter when the app says so.']},
+};
+function openGuide(id){const g=GUIDES[id];if(!g)return;
+  $('#guideBody').innerHTML=`<h3>${esc(g.t)}</h3><div class="gsec"><div class="gl">How to measure</div><ol>${g.how.map(x=>'<li>'+esc(x)+'</li>').join('')}</ol></div>
+  <div class="gsec"><div class="gl">Why it matters</div><p>${esc(g.why)}</p></div>
+  <div class="gsec"><div class="gl">If it does not look normal</div><ul>${g.bad.map(x=>'<li>'+esc(x)+'</li>').join('')}</ul></div>
+  <p class="sm mut">Limits are general adult values for the demo; real limits are set for you by the flight surgeon.</p>`;
+  $('#guide').hidden=false;}
+
+/* ===== Coming up (reminders) ===== */
+function renderNext(){
+  const now=S.now,L=[];
+  L.push({t:410,l:'Morning blood pressure',g:'bp',done:'done'});
+  L.push({t:540,l:'Exercise: treadmill + resistance (60 min)',done:now>=600?'stopped at 70%':null});
+  for(const i of S.issues.filter(issueOpen))if(i.kind==='sym')L.push({t:i.t0+120,l:`Update status: ${i.t}`});
+  L.push({t:1230,l:'Put on the sleep sensor',g:'sleep'});
+  L.push({t:1350,l:'Quiet hours'});
+  const up=L.filter(x=>!x.done).sort((a,b)=>a.t-b.t),done=L.filter(x=>x.done);
+  $('#next').innerHTML=up.map(x=>`<div class="nx${x.t<now?' late':''}"><span class="mono">${fmt(x.t)}</span><span>${esc(x.l)}${x.t<now?' <b>· due</b>':''}</span>${x.g?`<button class="lnk" data-guide="${x.g}">how</button>`:''}</div>`).join('')
+    +done.map(x=>`<div class="nx done"><span class="mono">${fmt(x.t)}</span><span>${esc(x.l)} · ${esc(x.done)}</span></div>`).join('')
+    +'<div class="nx"><span class="mono">day 147</span><span>Weekly eye exam with the CMO</span></div>';
+}
+
+/* ===== Emergency (challenge: crewmate collapses with chest pain) ===== */
+const EMG={
+  conscious:[
+    {t:'Stop all activity',x:'Have the person rest, secured in place. Loosen tight clothing. If it is you: stop, hold on to a handrail and keep this screen open.'},
+    {t:'Help is coming',x:'The CMO and the Commander were alerted when this screen opened. Stay with the person and keep talking to them.'},
+    {t:'Measure vital signs',x:'Blood pressure, pulse and SpO₂. The smart shirt is already recording the heart rhythm; the CMO will add a 12-lead ECG from the medical kit.',g:[['bp','Blood pressure'],['pulse','Pulse'],['spo2','SpO₂']]},
+    {t:'Ask and write down',x:'When did it start? What were they doing? Where is the pain, and does it spread to the arm, jaw or back? Is breathing hard?',note:true},
+    {t:'No medicine without the CMO',x:'The CMO chooses any medicine from the onboard checklist and the medical record.'},
+    {t:'If they stop responding',x:'Switch to the "Not responding" steps straight away.',jump:'unresp'},
+  ],
+  unresp:[
+    {t:'Shout for help',x:'The CMO and the Commander were alerted automatically. Call out to the rest of the crew.'},
+    {t:'Check breathing: 10 seconds at most',x:'Look at the chest. Gasping is not normal breathing.',opts:[['Breathing normally','breathing'],['Not breathing normally','cpr']]},
+  ],
+  breathing:[{t:'Keep them secured and watch',x:'Stay with them and check breathing again and again until the CMO takes over. If breathing stops, go to chest compressions.',jump:'cpr'}],
+  cpr:[
+    {t:'Start chest compressions now',x:'Centre of the chest, hard and fast: 100–120 a minute, 5–6 cm deep. Follow the beat.',beat:true,method:true},
+    {t:'Get the defibrillator (AED)',x:'A second crew member brings the AED from the medical kit, switches it on and follows its voice. Keep compressions going until it says stop.',beat:true},
+    {t:'Keep going',x:'Do not stop until the CMO takes over, the AED tells you to, or the person starts breathing.',beat:true},
+  ],
+};
+const EMG_T={conscious:'Awake · chest pain',unresp:'Not responding',breathing:'Not responding · breathing',cpr:'Not responding · CPR'};
+let EM=null,emTick=null,beatTimer=null,audio=null,beatOn=false;
+function emgOpen(){
+  EM={mode:null,i:0,start:Date.now(),simT:S.now,note:''};
+  S.issues.push({id:'i'+(S.seq++),kind:'emg',t:'Emergency: crew alert',lvl:'rd',t0:S.now,log:[],cmo:true});save();
+  $('#emg').hidden=false;emgRender();clearInterval(emTick);emTick=setInterval(emgClock,500);emgClock();render();
+}
+function emgClock(){if(!EM)return;const s=Math.floor((Date.now()-EM.start)/1000);$('#emgClock').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function emgRender(){
+  const B=$('#emgBody');let h='';
+  if(!EM.mode){
+    h=`<div class="eq">Can the person answer you?</div><div class="ex">Speak loudly and tap both shoulders.</div>
+      <div class="eopts"><button class="ebig" data-em="conscious">Yes: awake, chest pain or feels very unwell</button><button class="ebig red" data-em="unresp">No: not responding</button></div>`;
+  }else{
+    const steps=EMG[EM.mode],s=steps[EM.i];
+    h=`<div class="estep">${esc(EMG_T[EM.mode])} · step ${EM.i+1} of ${steps.length}</div><div class="eq">${esc(s.t)}</div><div class="ex">${esc(s.x)}</div>`;
+    if(s.g)h+=`<div class="eopts sm">${s.g.map(([id,l])=>`<button class="btn sec" data-guide="${id}">How to measure: ${l}</button>`).join('')}</div>`;
+    if(s.note)h+=`<textarea id="emNote" placeholder="Write the answers here. They go into the report for the CMO.">${esc(EM.note)}</textarea>`;
+    if(s.beat)h+=`<div class="beatwrap"><div class="beat"></div><div><b>110</b> per minute<br><button class="btn sec" data-beatsnd>${beatOn?'Sound off':'Sound on'}</button></div></div>`;
+    if(s.method)h+=`<div class="method"><b>In weightlessness:</b> alone with the patient, use the Evetts-Russomano method (your legs around the patient’s torso, ankles crossed behind their back). Once the patient is strapped to the medical restraint, use the handstand method (feet braced on the wall opposite). Source: DGLRM / ESAM space medicine CPR guideline; the ISS protocol uses the handstand method.</div>`;
+    if(s.opts)h+=`<div class="eopts">${s.opts.map(([l,m])=>`<button class="ebig${m==='cpr'?' red':''}" data-em="${m}">${esc(l)}</button>`).join('')}</div>`;
+    h+=`<div class="enav"><button class="btn sec" data-emback>Back</button>${s.jump?`<button class="btn red" data-em="${s.jump}">${s.jump==='cpr'?'Start compressions':'Not responding'}</button>`:''}${!s.opts&&EM.i<steps.length-1?'<button class="btn" data-emnext>Done · next step</button>':''}</div>`;
+  }
+  B.innerHTML=h;
+  const anyBeat=EM.mode&&EMG[EM.mode][EM.i].beat;if(!anyBeat)stopBeat();else if(beatOn)startBeat();
+}
+function startBeat(){if(beatTimer)return;try{audio=audio||new (window.AudioContext||window.webkitAudioContext)();}catch(e){return}
+  beatTimer=setInterval(()=>{try{const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=880;g.gain.value=.12;o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+.05)}catch(e){}},545);}
+function stopBeat(){clearInterval(beatTimer);beatTimer=null}
+function emgEnd(){
+  if(EM){const it=S.issues.find(i=>i.kind==='emg'&&i.t0===EM.simT);if(it){it.t='Emergency: '+(EM.mode?EMG_T[EM.mode]:'crew alert');if(EM.note)it.note=EM.note;}}
+  EM=null;stopBeat();clearInterval(emTick);$('#emg').hidden=true;save();render();toast('Emergency logged for the CMO and the flight surgeon.');
+}
+
+/* ===== Live Earth–Mars light time (NASA Deep Space Network, DSN Now feed) ===== */
+const LINK={s:872,live:false,src:''};
+const mmss=s=>Math.floor(s/60)+':'+String(Math.round(s%60)).padStart(2,'0');
+function renderLink(){$('#linkTxt').textContent=mmss(LINK.s);$('#linkSrc').textContent=LINK.live?`live · NASA DSN Now (${LINK.src})`:'scenario value';}
+async function loadLink(){
+  try{const ctl=new AbortController();setTimeout(()=>ctl.abort(),6000);
+    const t=await (await fetch('https://eyes.nasa.gov/dsn/data/dsn.xml',{signal:ctl.signal,cache:'no-store'})).text();
+    const m=[...t.matchAll(/target name="(MRO|M01O|ODY|TGO|MVN|M20|MSL|MEX)"[^>]*?rtlt="([\d.]+)"/g)].map(x=>[x[1],+x[2]]).filter(x=>x[1]>100);
+    if(m.length){LINK.s=m[0][1]/2;LINK.live=true;LINK.src=m[0][0];}
+  }catch(e){}
+  renderLink();render();
 }
 
 function renderStatus(){
@@ -550,22 +717,23 @@ function renderReport(){
     items:S.issues.map(i=>({title:i.t,kind:i.kind,level:{gr:'monitor',am:'follow_up',rd:'cmo_today'}[i.lvl],opened:fmt(i.t0),status:i.log.length?i.log[i.log.length-1].s:'Open',imm:{category:immOf(i)[0],group:immOf(i)[1]},cmoNotified:!!i.cmo})),
     environment:{co2ppm:Math.round(co2At(S.now)),crewWidePattern:S.now>=ENV_AT,commanderNotified:S.envAck?fmt(S.envAck):null},
     vitals:{bloodPressure:BP,radiationCareerMsv:DOSE.tot}};
-  $('#report').textContent=S.view==='json'?JSON.stringify(J,null,2):L.join('\n');
+  $('#report').textContent=(S.clin&&S.view==='json')?JSON.stringify(J,null,2):L.join('\n');
   $('#viewTxt').classList.toggle('sel',S.view!=='json');$('#viewJson').classList.toggle('sel',S.view==='json');
   $('#sendCmo').textContent=S.sent.cmo?`Sent to CMO ${fmt(S.sent.cmo)}`:'Send to CMO';
-  $('#sendGnd').textContent=S.sent.gnd?`Queued ${fmt(S.sent.gnd)} · arrives ${fmt(S.sent.gnd+14.5)}`:'Queue for flight surgeon';
+  $('#sendGnd').textContent=S.sent.gnd?`Queued ${fmt(S.sent.gnd)} · arrives ${fmt(S.sent.gnd+LINK.s/60)}`:'Queue for flight surgeon';
 }
 
 function renderSrcs(){
   const R=[
-    ['Wearable physiology','Smart shirt: ECG, heart rate, HRV, breathing (like CSA Astroskin)','2 min'],
+    ['Wearable physiology','Smart shirt: ECG, heart rate, breathing, SpO₂, skin temperature (like CSA’s Bio-Monitor on the ISS)','2 min'],
     ['Point-of-care','Medical kit: blood pressure (morning), labs when ordered','06:50'],
     ['Sleep','Sleep sensor (actigraphy)','06:35'],
     ['Countermeasures','Exercise device: prescribed vs completed load','09:42'],
-    ['Environment','Cabin atmosphere system: CO₂, pressure','1 min'],
+    ['Environment','Cabin atmosphere system + personal CO₂ monitor (tested on the ISS)','1 min'],
     ['Radiation','Personal dosimeter','5 min'],
     ['Crew schedule','Planned activities, used to explain changes','06:00'],
     ['Medical record','Allergies and medications (read by CMO tools)','—'],
+    ['Earth link','NASA Deep Space Network (DSN Now feed): today’s real Earth–Mars light time',LINK.live?'live':'—'],
     ['Medical evidence','NASA Integrated Medical Model: 100-condition list used to classify each item','ref'],
   ];
   $('#srcs').innerHTML=R.map(r=>`<div class="s"><div>${r[0]}<small>${r[1]}</small></div><div class="st">● ${r[2]}</div></div>`).join('');
@@ -614,7 +782,7 @@ function sysState(){
 function bodySelect(k){SEL=k;renderBody();}
 function renderBody(){
   const {st,items}=sysState();
-  BODY.setStatus(st,SEL,{heart:Math.round(hrAt(S.now))+' bpm',lungs:Math.round(respAt(S.now))+'/min',brain:'sleep '+SLEEP.h+' h',eyes:'no change',blood:'labs d135',bones:S.now>=600?'ex 70%':'ex 09:00',rad:DOSE.tot+' mSv'});
+  BODY.setStatus(st,SEL,!S.clin?{}:{heart:Math.round(hrAt(S.now))+' bpm',lungs:Math.round(respAt(S.now))+'/min',brain:'sleep '+SLEEP.h+' h',eyes:'no change',blood:'labs d135',bones:S.now>=600?'ex 70%':'ex 09:00',rad:DOSE.tot+' mSv'});
   const k=SEL,d=SYS[k],s=st[k];
   const word=s==='bad'?'Needs attention now':s==='warn'?'Watch':'Nominal';
   $('#sysDetail').innerHTML=`<h4><span class="sd ${s}"></span>${d.n}</h4><div class="stl">${word}</div>
@@ -810,7 +978,16 @@ if(!document.querySelector('#body3d canvas')){const h=document.querySelector('#b
 
 /* ===== Events ===== */
 document.addEventListener('click',ev=>{
+  if(ev.target.id==='guide'){$('#guide').hidden=true;return}
   const b=ev.target.closest('button');if(!b)return;
+  if(b.dataset.guide){openGuide(b.dataset.guide);return}
+  if(b.id==='guideX'){$('#guide').hidden=true;return}
+  if(b.id==='emgBtn'){emgOpen();return}
+  if(b.id==='emgEnd'){emgEnd();return}
+  if(EM&&b.dataset.em){EM.mode=b.dataset.em;EM.i=0;emgRender();return}
+  if(EM&&b.hasAttribute('data-emnext')){EM.i++;emgRender();return}
+  if(EM&&b.hasAttribute('data-emback')){if(EM.i>0)EM.i--;else EM.mode=null;emgRender();return}
+  if(EM&&b.hasAttribute('data-beatsnd')){beatOn=!beatOn;beatOn?startBeat():stopBeat();emgRender();return}
   if(b.dataset.sys){bodySelect(b.dataset.sys);return}
   if(b.dataset.sysym){$('#sySel').value=b.dataset.sysym;$('#sySel').scrollIntoView({behavior:'smooth',block:'center'});$('#sySel').focus();return}
   const rq=b.closest('.req');const id=rq&&rq.dataset.id;
@@ -827,12 +1004,14 @@ document.addEventListener('click',ev=>{
     $('#syOut').innerHTML=`<div class="out ${o.lvl}">${esc(o.res)}<div class="why">Rule: ${esc(o.rule)}</div></div>`;$('#syNote').value='';save();render();return}
   if(b.id==='viewTxt'||b.id==='viewJson'){S.view=b.id==='viewJson'?'json':'txt';save();renderReport();return}
   if(b.id==='sendCmo'){S.sent.cmo=S.now;save();render();toast('Sent to Dr. K. Ito.');return}
-  if(b.id==='sendGnd'){S.sent.gnd=S.now;save();render();toast('Queued. One-way light time 14 min 32 s.');return}
+  if(b.id==='sendGnd'){S.sent.gnd=S.now;save();render();toast('Queued. Arrives on Earth in '+mmss(LINK.s)+' (light time).');return}
   if(b.id==='reset'){stop();S=JSON.parse(JSON.stringify(DEF));$('#syOut').innerHTML='';save();render();return}
   if(b.id==='play'){playing?stop():start();return}
 });
+document.addEventListener('change',ev=>{if(ev.target.id==='clinTog'){S.clin=ev.target.checked;if(!S.clin)S.view='txt';save();render();}});
 document.addEventListener('input',ev=>{
   const t=ev.target;
+  if(t.id==='emNote'&&EM){EM.note=t.value;return}
   if(t.id==='clock'){S.now=+t.value;save();render()}
   if(t.id==='sySev')$('#sySevTxt').textContent=t.value;
   if(t.hasAttribute('data-n')){const id=t.closest('.req').dataset.id;S.ctx[id]=S.ctx[id]||{a:[]};S.ctx[id].n=t.value;save();renderReport()}
@@ -842,7 +1021,7 @@ function start(){$('#play').textContent='Pause';playing=setInterval(()=>{if(S.no
 function stop(){clearInterval(playing);playing=null;$('#play').textContent='Play'}
 
 $('#sySel').innerHTML=SYMS.map(s=>`<option>${s}</option>`).join('');
-syncIssues();render();
+syncIssues();renderLink();render();loadLink();
 </script>
 </body>
 </html>
