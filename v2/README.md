@@ -26,6 +26,29 @@ NASA does not have this as a finished app. NASA's Human Research Program, **Expl
   - An AI clinical decision support system that supports the CMO.
   - v2 is not CMO-DA and contains no AI. It collects the crew member's data and context and hands them over in a structured, machine-readable form (**Data** view of the report) that a tool like CMO-DA could read.
 
+## Built on the real ISS medical routine
+
+| How it works on the ISS today (NASA, JAXA, CSA) | In Solar Guardian (Mars) |
+|---|---|
+| A Crew Medical Officer on board, a flight surgeon at Mission Control | **CMO Console** for the onboard CMO; the crew app sends reports and SOS |
+| Weekly **private medical conference**: a confidential call with the flight surgeon, and a psychologist when needed | **Private medical conference** panel. A live call is impossible from Mars, so the astronaut sends a private message to the flight surgeon or psychologist, with live arrival and reply times. It never goes into the crew report. |
+| **2.5 hours of exercise** a day on ARED, the T2 treadmill and the CEVIS bike | Two exercise blocks in the schedule (ARED + T2 in the morning, CEVIS in the evening) and minutes tracked against 150 |
+| **Daily food log** on a tablet, sent to the dietitians weekly | **Daily log**: meals and water, sent weekly |
+| Wearables: CSA Bio-Monitor shirt, wrist actigraph, dosimeter | Data sources the app reads (simulated) |
+| Self-administered **ultrasound** (eyes, heart, vessels), guided from Earth | Weekly eye ultrasound reminder; ultrasound in the emergency steps |
+| Cabin CO₂, O₂, water and microbes monitored | Cabin air card and the crew-wide CO₂ pattern |
+| Preflight tests set each astronaut's baseline | Baseline = preflight tests + the last 14 days |
+| Emergency: doctors guide in real time, the crew can return to Earth | Emergency guidance on board, SOS to the CMO, 3D link showing why Earth is too far |
+
+## One system, two screens, one user each
+
+| Screen | User | Purpose |
+|---|---|---|
+| `v2/` · Crew Self-Care | The astronaut (not a doctor) | Simple: plain words, context questions, EMERGENCY button |
+| `/#mission` · CMO Console (the first version) | The Crew Medical Officer | The whole crew, ECG, triage, treatment protocols, tamper-proof ledger |
+
+**SOS link.** When the astronaut presses EMERGENCY, the CMO Console shows a red SOS at once, with a repeating alarm. The SOS shows who pressed it, the situation (awake with chest pain, or not responding / CPR), location, current vitals and the crew's notes. It is also written to the decision log and the ledger. When the CMO presses *Acknowledge · on my way*, the astronaut's screen shows "Dr. K. Ito acknowledged · on the way". For the demo, open both screens side by side in the same browser. They talk over a BroadcastChannel; no server is needed.
+
 ## Mentor feedback → v2
 
 | Feedback | v2 |

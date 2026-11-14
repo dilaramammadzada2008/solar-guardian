@@ -230,6 +230,13 @@ body:not(.clin) .clin-only{display:none!important}
 #lkStat .bub{margin-top:8px;background:#0F2C48;border:1px solid #2B5D85;border-radius:10px;padding:8px 10px;color:var(--ink)}
 #lkStat .lkf{margin-top:10px;font-size:12px;color:var(--mut)}
 
+.lg{margin-bottom:12px}.lg .gl{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--mut);margin-bottom:6px}
+.wrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.wrow b{font-size:18px}
+.bar{height:10px;background:var(--p3);border-radius:6px;overflow:hidden;margin-bottom:6px}.bar i{display:block;height:100%;background:var(--gr);border-radius:6px}
+#pmc textarea{width:100%;min-height:60px;background:var(--p1);border:1px solid var(--line2);border-radius:8px;padding:8px 10px;resize:vertical}
+.pm{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}.pmt{margin-top:4px;color:var(--ink2);font-size:14px;white-space:pre-wrap}
+.pm .bub{margin-top:8px;background:#0F2C48;border:1px solid #2B5D85;border-radius:10px;padding:8px 10px;font-size:14px}
+.opt:disabled{opacity:.4;cursor:default}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -277,7 +284,7 @@ body:not(.clin) .clin-only{display:none!important}
       </section>
 
       <section class="panel tl">
-        <div class="ph"><h3>Today · data with your context</h3><span class="sm mut">baseline = your last 14 days</span></div>
+        <div class="ph"><h3>Today · data with your context</h3><span class="sm mut">baseline = your preflight tests + last 14 days</span></div>
         <svg id="chart" viewBox="0 0 1000 300" role="img" aria-label="Timeline of schedule, heart rate against personal baseline, cabin CO2, and crew annotations"></svg>
         <div class="legend">
           <span><i style="background:#2C4C8A"></i>crew schedule</span>
@@ -294,6 +301,16 @@ body:not(.clin) .clin-only{display:none!important}
       <section class="panel">
         <div class="ph"><h3>Coming up</h3><span class="sm mut">reminders</span></div>
         <div class="pb" id="next"></div>
+      </section>
+
+      <section class="panel">
+        <div class="ph"><h3>Daily log</h3><span class="sm mut">to dietitians weekly</span></div>
+        <div class="pb" id="dlog"></div>
+      </section>
+
+      <section class="panel">
+        <div class="ph"><h3>Private medical conference</h3><span class="sm mut">private</span></div>
+        <div class="pb" id="pmc"></div>
       </section>
 
       <section class="panel">
@@ -350,7 +367,7 @@ body:not(.clin) .clin-only{display:none!important}
   </section>
 </div>
 <div class="modal" id="guide" hidden><div class="mbox"><button class="x" id="guideX" aria-label="Close">×</button><div id="guideBody"></div></div></div>
-<div class="emg" id="emg" hidden><div class="emgtop"><b>EMERGENCY</b><span class="mono" id="emgClock">00:00</span><span class="al">CMO Dr. K. Ito and the Commander alerted · flight surgeon message queued</span><button class="btn sec" id="emgEnd">End emergency</button></div><div class="emgwrap"><div id="emgBody"></div><aside class="emglink"><div class="lkh"><b>Link to Earth</b><button class="opt" id="lkIss" data-lk="iss">ISS today</button><button class="opt" id="lkMars" data-lk="mars">Mars</button><button class="opt" id="lkFast" title="Demo: speed up the signal">⏩ ×60</button></div><div id="lk3d"><span class="lkns">not to scale</span></div><div id="lkStat"></div></aside></div></div>
+<div class="emg" id="emg" hidden><div class="emgtop"><b>EMERGENCY</b><span class="mono" id="emgClock">00:00</span><span class="al" id="emgAl">SOS sent to CMO Dr. K. Ito and the Commander · waiting for acknowledgement · flight surgeon message queued</span><button class="btn sec" id="emgEnd">End emergency</button></div><div class="emgwrap"><div id="emgBody"></div><aside class="emglink"><div class="lkh"><b>Link to Earth</b><button class="opt" id="lkIss" data-lk="iss">ISS today</button><button class="opt" id="lkMars" data-lk="mars">Mars</button><button class="opt" id="lkFast" title="Demo: speed up the signal">⏩ ×60</button></div><div id="lk3d"><span class="lkns">not to scale</span></div><div id="lkStat"></div></aside></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -365,11 +382,12 @@ function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clea
 const BASE={hrLo:58,hrHi:78,hr:66,sleep:7.0,hrv:52};
 const SCHEDULE=[
   {s:480,e:510,l:'Breakfast'},
-  {s:540,e:600,l:'Exercise (prescribed 60 min)',ex:true},
+  {s:540,e:600,l:'Exercise 1: ARED resistance + T2 treadmill (60 min)',ex:true},
   {s:660,e:780,l:'Plant growth experiment'},
   {s:840,e:900,l:'Habitat maintenance'},
   {s:960,e:1020,l:'Robotics training'},
   {s:1140,e:1200,l:'Crew dinner'},
+  {s:1200,e:1290,l:'Exercise 2: CEVIS bike (90 min)',ex2:true},
 ];
 const EX_END=582; // stopped at 70% of prescribed load
 const EP=[{id:'hr1',s:790,e:830,up:24},{id:'hr2',s:1040,e:1065,up:19}];
@@ -378,6 +396,7 @@ const BP='118/76', DOSE={day:1.8,tot:255,lim:600};
 const nz=t=>Math.sin(t*.37)*1.6+Math.sin(t*.091)*2.2+Math.sin(t*1.7)*.8;
 function hrAt(t){let h=BASE.hr+nz(t);
   if(t>=540&&t<EX_END){const p=Math.min(1,(t-540)/8,(EX_END-t)/5);h+=58*Math.max(0,p)}
+  if(t>=1200&&t<1290){const p=Math.min(1,(t-1200)/8,(1290-t)/5);h+=42*Math.max(0,p)}
   for(const e of EP)if(t>=e.s&&t<e.e){const p=Math.min(1,(t-e.s)/6,(e.e-t)/6);h+=e.up*Math.max(0,p)}
   return h}
 // cabin CO2: rises from 14:30, crosses 3,900 at ~15:30; backup scrubber after the Commander is notified
@@ -455,7 +474,7 @@ function assessSymptom(sy,sev){
 function render(){
   $('#clock').value=S.now;$('#clockTxt').textContent=fmt(S.now);
   document.body.classList.toggle('clin',!!S.clin);$('#clinTog').checked=!!S.clin;
-  renderReqs();renderBody();renderVitals();renderChart();renderIssues();renderKpis();renderNext();renderReport();renderSrcs();renderStatus();
+  renderReqs();renderBody();renderVitals();renderChart();renderIssues();renderKpis();renderNext();renderLog();renderPMC();renderReport();renderSrcs();renderStatus();
 }
 const activeReqs=()=>Object.keys(REQ).filter(k=>S.now>=REQ[k].at);
 function pendingReqs(){return activeReqs().filter(k=>!assess(k,S.ctx[k]))}
@@ -555,7 +574,7 @@ function renderIssues(){
 }
 
 /* ===== vitals (simulated wearable streams) ===== */
-const isEx=t=>t>=540&&t<EX_END;
+const isEx=t=>(t>=540&&t<EX_END)||(t>=1200&&t<1290);
 function hrvAt(t){return Math.max(18,BASE.hrv-0.75*(hrAt(t)-BASE.hr)+Math.sin(t*.21)*2.5)}
 function spo2At(t){return 97.6+Math.sin(t*.023)*.35-(isEx(t)?.9:0)}
 function respAt(t){let r=13.6+Math.sin(t*.07)*.6+(isEx(t)?9:0)+Math.max(0,(co2At(t)-2400)/1800)*3.2;for(const e of EP)if(t>=e.s&&t<e.e)r+=2.5;return r}
@@ -627,14 +646,17 @@ function openGuide(id){const g=GUIDES[id];if(!g)return;
 function renderNext(){
   const now=S.now,L=[];
   L.push({t:410,l:'Morning blood pressure',g:'bp',done:'done'});
-  L.push({t:540,l:'Exercise: treadmill + resistance (60 min)',done:now>=600?'stopped at 70%':null});
+  L.push({t:480,l:'Log breakfast',done:(S.log&&S.log.meals.b)?'logged':null});
+  L.push({t:540,l:'Exercise 1: ARED + T2 treadmill (60 min)',done:now>=600?'stopped at 70%':null});
+  L.push({t:1200,l:'Exercise 2: CEVIS bike (90 min)',done:now>=1290?'done':null});
+  L.push({t:1215,l:'Log dinner and water',done:(S.log&&S.log.meals.d)?'logged':null});
   for(const i of S.issues.filter(issueOpen))if(i.kind==='sym')L.push({t:i.t0+120,l:`Update status: ${i.t}`});
   L.push({t:1230,l:'Put on the sleep sensor',g:'sleep'});
   L.push({t:1350,l:'Quiet hours'});
   const up=L.filter(x=>!x.done).sort((a,b)=>a.t-b.t),done=L.filter(x=>x.done);
   $('#next').innerHTML=up.map(x=>`<div class="nx${x.t<now?' late':''}"><span class="mono">${fmt(x.t)}</span><span>${esc(x.l)}${x.t<now?' <b>· due</b>':''}</span>${x.g?`<button class="lnk" data-guide="${x.g}">how</button>`:''}</div>`).join('')
     +done.map(x=>`<div class="nx done"><span class="mono">${fmt(x.t)}</span><span>${esc(x.l)} · ${esc(x.done)}</span></div>`).join('')
-    +'<div class="nx"><span class="mono">day 147</span><span>Weekly eye exam with the CMO</span></div>';
+    +'<div class="nx"><span class="mono">day 145</span><span>Private medical conference (flight surgeon)</span></div><div class="nx"><span class="mono">day 147</span><span>Weekly eye ultrasound with the CMO</span></div><div class="nx"><span class="mono">weekly</span><span>Food log sent to the dietitians</span></div>';
 }
 
 /* ===== Emergency (challenge: crewmate collapses with chest pain) ===== */
@@ -663,7 +685,7 @@ let EM=null,emTick=null,beatTimer=null,audio=null,beatOn=false;
 function emgOpen(){
   EM={mode:null,i:0,start:Date.now(),simT:S.now,note:''};
   S.issues.push({id:'i'+(S.seq++),kind:'emg',t:'Emergency: crew alert',lvl:'rd',t0:S.now,log:[],cmo:true});save();
-  $('#emg').hidden=false;emgRender();LK.start('mars');clearInterval(emTick);emTick=setInterval(emgClock,500);emgClock();render();
+  $('#emg').hidden=false;emgRender();LK.start('mars');bc({type:'sos',who:'Aylin Rahimova',mission:fmt(S.now),path:'Crew is assessing',sent:Date.now()});clearInterval(emTick);emTick=setInterval(emgClock,500);emgClock();render();
 }
 function emgClock(){if(!EM)return;const s=Math.floor((Date.now()-EM.start)/1000);$('#emgClock').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
 function emgRender(){
@@ -689,8 +711,15 @@ function startBeat(){if(beatTimer)return;try{audio=audio||new (window.AudioConte
 function stopBeat(){clearInterval(beatTimer);beatTimer=null}
 function emgEnd(){
   if(EM){const it=S.issues.find(i=>i.kind==='emg'&&i.t0===EM.simT);if(it){it.t='Emergency: '+(EM.mode?EMG_T[EM.mode]:'crew alert');if(EM.note)it.note=EM.note;}}
-  EM=null;stopBeat();clearInterval(emTick);LK.stop();$('#emg').hidden=true;save();render();toast('Emergency logged for the CMO and the flight surgeon.');
+  EM=null;stopBeat();clearInterval(emTick);LK.stop();bc({type:'sos-end'});$('#emg').hidden=true;save();render();toast('Emergency logged for the CMO and the flight surgeon.');
 }
+
+/* ===== SOS link to the CMO Console (v1) over BroadcastChannel ===== */
+const BC=('BroadcastChannel' in window)?new BroadcastChannel('solar-guardian'):null;
+function bc(m){try{BC&&BC.postMessage(m)}catch(e){}}
+if(BC)BC.onmessage=e=>{const m=e.data||{};
+  if(m.type==='ack'&&EM){EM.ack=m;const a=$('#emgAl');if(a){a.innerHTML='<span style="color:#3DDC97;font-weight:600">✓ '+esc(m.by)+' acknowledged at '+esc(m.at)+' · on the way</span> · flight surgeon message queued';}toast(m.by+' is on the way.');}
+};
 
 /* ===== Live Earth–Mars light time (NASA Deep Space Network, DSN Now feed) ===== */
 const LINK={s:872,live:false,src:''};
@@ -1094,17 +1123,51 @@ const LK=(()=>{
   };
 })();
 
+/* ===== Daily log (as on the ISS: tablet log, sent to the dietitians weekly) ===== */
+const EXMIN=()=>{let m=0;if(S.now>=600)m+=42;else if(S.now>540)m+=Math.min(42,S.now-540);if(S.now>=1290)m+=90;else if(S.now>1200)m+=S.now-1200;return m};
+function renderLog(){
+  const L=S.log||(S.log={meals:{},water:0});
+  const meals=[['b','Breakfast',480],['l','Lunch',780],['d','Dinner',1140]];
+  const ex=EXMIN();
+  $('#dlog').innerHTML=`<div class="lg"><div class="gl">Meals eaten</div><div class="opts">${meals.map(([k,l,t])=>`<button class="opt${L.meals[k]?' sel':''}" data-meal="${k}"${S.now<t?' disabled':''}>${L.meals[k]?'✓ ':''}${l}</button>`).join('')}</div></div>
+    <div class="lg"><div class="gl">Water</div><div class="wrow"><button class="opt" data-water="-1">−</button><b class="mono">${(L.water*0.25).toFixed(2)} L</b><button class="opt" data-water="1">+ 250 ml</button><span class="sm mut">target 2.0 L (set by your dietitian)</span></div></div>
+    <div class="lg"><div class="gl">Exercise today (device logs)</div><div class="bar"><i style="width:${Math.min(100,ex/150*100)}%"></i></div><div class="sm"><b class="mono">${ex}</b> of 150 min · ARED + T2 treadmill in the morning, CEVIS bike in the evening</div></div>
+    <p class="sm mut" style="margin:6px 0 0">On the ISS the crew logs food on a tablet and the data goes to the dietitians once a week. Same here.</p>`;
+}
+
+/* ===== Private medical conference (ISS: weekly private call; Mars: private message) ===== */
+function renderPMC(){
+  const P=S.pmc||(S.pmc=[]);const now=Date.now(),ow=LINK.s;
+  const list=P.map(m=>{const el=(now-m.sent)/1000;
+    const st=el<ow?`<span class="am">on its way · arrives on Earth in <b class="mono">${mmss(ow-el)}</b></span>`
+      :el<2*ow?`<span class="gr">received on Earth</span> · reply expected in <b class="mono">${mmss(2*ow-el)}</b>`
+      :`<span class="gr">reply received</span>`;
+    const rep=el>=2*ow?`<div class="bub"><b>${esc(m.to==='psy'?'Psychologist':'Flight surgeon')}</b> <span class="mut">(example reply)</span><br>${m.to==='psy'?'Thank you for telling me. Let’s talk about sleep and workload in your next private session; write anytime before then.':'Thanks, I have read your note and today’s data. Keep the follow-up in the app; the CMO can examine you if anything gets worse.'}</div>`:'';
+    return `<div class="pm"><div class="sm"><b>To ${esc(m.to==='psy'?'psychologist':'flight surgeon')}</b> · ${esc(m.at)} · ${st}</div><div class="pmt">${esc(m.txt)}</div>${rep}</div>`}).join('');
+  const box=$('#pmc');if(box.contains(document.activeElement)&&document.activeElement.tagName==='TEXTAREA'){const l=$('#pmcList');if(l&&l.innerHTML!==list)l.innerHTML=list;return}
+  box.innerHTML=`<p class="sm" style="margin:0 0 8px;color:var(--ink2)">On the ISS this is a weekly private video call. From Mars a live call is not possible, so you send a private message. <b>Only you and the person you choose can read it. It is not in the crew report.</b></p>
+    <div class="opts" style="margin-bottom:8px"><button class="opt${(S.pmcTo||'fs')==='fs'?' sel':''}" data-pmcto="fs">Flight surgeon</button><button class="opt${S.pmcTo==='psy'?' sel':''}" data-pmcto="psy">Psychologist</button></div>
+    <textarea id="pmcTxt" placeholder="How are you really doing? Anything you don’t want in the crew report."></textarea>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap"><button class="btn" id="pmcSend">Send privately</button><span class="sm mut">Next scheduled conference: day 145</span></div>
+    <div id="pmcList">${list}</div>`;
+}
+setInterval(()=>{if((S.pmc||[]).length)renderPMC()},1000);
+
 /* ===== Events ===== */
 document.addEventListener('click',ev=>{
   if(ev.target.id==='guide'){$('#guide').hidden=true;return}
   const b=ev.target.closest('button');if(!b)return;
   if(b.dataset.guide){openGuide(b.dataset.guide);return}
+  if(b.dataset.meal){S.log=S.log||{meals:{},water:0};S.log.meals[b.dataset.meal]=!S.log.meals[b.dataset.meal];save();render();return}
+  if(b.dataset.water){S.log=S.log||{meals:{},water:0};S.log.water=Math.max(0,S.log.water+(+b.dataset.water));save();renderLog();return}
+  if(b.dataset.pmcto){S.pmcTo=b.dataset.pmcto;save();renderPMC();return}
+  if(b.id==='pmcSend'){const t=$('#pmcTxt').value.trim();if(!t){toast('Write a few words first.');return}S.pmc=S.pmc||[];S.pmc.unshift({to:S.pmcTo||'fs',txt:t,at:fmt(S.now),sent:Date.now()});save();$('#pmcTxt').value='';$('#pmcTxt').blur();renderPMC();toast('Sent privately. It is not in the crew report.');return}
   if(b.id==='guideX'){$('#guide').hidden=true;return}
   if(b.id==='emgBtn'){emgOpen();return}
   if(b.id==='emgEnd'){emgEnd();return}
   if(b.dataset.lk){LK.setMode(b.dataset.lk);return}
   if(b.id==='lkFast'){LK.fast();return}
-  if(EM&&b.dataset.em){EM.mode=b.dataset.em;EM.i=0;emgRender();return}
+  if(EM&&b.dataset.em){EM.mode=b.dataset.em;EM.i=0;emgRender();bc({type:'sos-update',path:EMG_T[EM.mode]});return}
   if(EM&&b.hasAttribute('data-emnext')){EM.i++;emgRender();return}
   if(EM&&b.hasAttribute('data-emback')){if(EM.i>0)EM.i--;else EM.mode=null;emgRender();return}
   if(EM&&b.hasAttribute('data-beatsnd')){beatOn=!beatOn;beatOn?startBeat():stopBeat();emgRender();return}
@@ -1131,7 +1194,7 @@ document.addEventListener('click',ev=>{
 document.addEventListener('change',ev=>{if(ev.target.id==='clinTog'){S.clin=ev.target.checked;if(!S.clin)S.view='txt';save();render();}});
 document.addEventListener('input',ev=>{
   const t=ev.target;
-  if(t.id==='emNote'&&EM){EM.note=t.value;return}
+  if(t.id==='emNote'&&EM){EM.note=t.value;bc({type:'sos-update',note:t.value});return}
   if(t.id==='clock'){S.now=+t.value;save();render()}
   if(t.id==='sySev')$('#sySevTxt').textContent=t.value;
   if(t.hasAttribute('data-n')){const id=t.closest('.req').dataset.id;S.ctx[id]=S.ctx[id]||{a:[]};S.ctx[id].n=t.value;save();renderReport()}

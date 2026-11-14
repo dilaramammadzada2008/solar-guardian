@@ -277,7 +277,7 @@ main{display:grid;grid-template-columns:300px minmax(0,1fr) 370px;gap:14px;paddi
     <svg width="30" height="30" viewBox="0 0 30 30"><defs><radialGradient id="lg" cx=".4" cy=".4"><stop offset="0" stop-color="#fff3c4"/><stop offset=".55" stop-color="#ffb547"/><stop offset="1" stop-color="#ff6a1f"/></radialGradient></defs><circle cx="15" cy="15" r="8" fill="url(#lg)"/><path d="M15 3a12 12 0 0 1 0 24" fill="none" stroke="#4fd1ff" stroke-width="2.2" stroke-linecap="round"/><path d="M15 27a12 12 0 0 1-9.5-4.7" fill="none" stroke="#4fd1ff" stroke-width="2.2" stroke-linecap="round" opacity=".5"/></svg>
     <div>SOLAR GUARDIAN<small>Autonomous crew health · space-weather AI</small></div>
   </div>
-  <div class="seg vtabs" role="tablist"><button class="btn on" id="tabHealth" role="tab">Astronaut health</button><button class="btn" id="tabMission" role="tab">Mission control</button></div>
+  <div class="seg vtabs" role="tablist"><button class="btn on" id="tabHealth" role="tab">Astronaut health</button><button class="btn" id="tabMission" role="tab">CMO Console</button></div>
   <div class="hstat">Mission clock<b id="hClock">—</b></div>
   <div class="hstat">Earth link · one-way<b id="hLink">—</b></div>
   <div class="hstat">Space weather<b id="hWx">—</b></div>
@@ -407,7 +407,7 @@ main{display:grid;grid-template-columns:300px minmax(0,1fr) 370px;gap:14px;paddi
     <div class="hvwho"><span class="hvlab">Astronaut</span><span class="seg" id="hvWho"></span></div>
     <div class="hvscore" id="hvScore"></div>
   </div>
-  <div class="hvbridge">Check yourself here every day. Some problems you cannot feel — a silent arrhythmia, rising cabin CO₂, a radiation storm — so Guardian also watches the whole crew, the cabin and the Sun on <button type="button" class="btn on" id="hvToMission">Mission control →</button></div>
+  <div class="hvbridge">Check yourself here every day. Some problems you cannot feel — a silent arrhythmia, rising cabin CO₂, a radiation storm — so Guardian also watches the whole crew, the cabin and the Sun on the <button type="button" class="btn on" id="hvToMission">CMO Console →</button></div>
   <div class="hvgrid">
     <section class="panel">
       <div class="ph"><h3>My body · tap a part</h3><span class="chip" id="hvOverall">—</span></div>
@@ -1954,5 +1954,78 @@ const BODY=(()=>{
 // the astronaut's own view opens first; index.html#mission opens Mission control
 $(location.hash==='#mission'?'#tabMission':'#tabHealth').click();
 </script>
+<style>
+/* SOS from the crew self-care app (v2) */
+#sosBox{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:9999;width:min(620px,94vw);background:#2A0812;border:2px solid #FF5470;border-radius:16px;box-shadow:0 0 0 6px rgba(255,84,112,.18),0 20px 60px rgba(0,0,0,.6);color:#FFE8EC;font-family:Inter,Arial,sans-serif;display:none;animation:sosPulse 1.2s infinite}
+#sosBox.ack{animation:none;border-color:#3ddc97;box-shadow:0 0 0 6px rgba(61,220,151,.15),0 20px 60px rgba(0,0,0,.6);background:#0B2318}
+#sosBox.ended{animation:none;border-color:#56658a;background:#0E1730}
+@keyframes sosPulse{50%{box-shadow:0 0 0 14px rgba(255,84,112,.08),0 20px 60px rgba(0,0,0,.6)}}
+#sosBox .sh{display:flex;align-items:center;gap:12px;padding:14px 18px 6px}
+#sosBox .tag{font:700 13px 'JetBrains Mono',monospace;letter-spacing:2px;background:#FF5470;color:#2A0812;border-radius:6px;padding:4px 10px}
+#sosBox.ack .tag{background:#3ddc97;color:#06210F}
+#sosBox.ended .tag{background:#56658a;color:#0E1730}
+#sosBox .who{font-size:20px;font-weight:700}
+#sosBox .ago{margin-left:auto;font:13px 'JetBrains Mono',monospace;color:#FFB3C0}
+#sosBox .sb{padding:4px 18px 14px;font-size:14px;line-height:1.5}
+#sosBox .grid{display:grid;grid-template-columns:120px 1fr;gap:4px 12px;margin:6px 0 10px}
+#sosBox .grid span:nth-child(odd){color:#FF9FB0;font-size:12px;text-transform:uppercase;letter-spacing:1px;padding-top:2px}
+#sosBox.ack .grid span:nth-child(odd){color:#8fd9b6}
+#sosBox .acts{display:flex;gap:10px;flex-wrap:wrap}
+#sosBox button{font:600 14px Inter,sans-serif;border:0;border-radius:10px;padding:10px 16px;cursor:pointer}
+#sosBox .b1{background:#FF5470;color:#2A0812}
+#sosBox .b2{background:transparent;color:#FFE8EC;border:1px solid #6b2a3a}
+#sosBox.ack .b2,#sosBox.ended .b2{border-color:#2b4a60}
+</style>
+<div id="sosBox" role="alertdialog" aria-live="assertive"></div>
+<script>
+/* CMO Console: receives SOS from the crew self-care app (v2) over BroadcastChannel.
+   Both pages run on the same origin, so two windows side by side talk directly, no server. */
+(function(){
+  if(!('BroadcastChannel' in window))return;
+  const ch=new BroadcastChannel('solar-guardian'),box=document.getElementById('sosBox');
+  let sos=null,beepT=null,agoT=null;
+  const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  function beep(){try{initAudio();const x=AUD.ctx;if(!x)return;const t0=x.currentTime+.02;
+    [[988,0,.18],[740,.22,.18],[988,.44,.18]].forEach(([f,s,d])=>{const o=x.createOscillator(),g=x.createGain();o.type='square';o.frequency.value=f;
+      g.gain.setValueAtTime(0,t0+s);g.gain.linearRampToValueAtTime(.07,t0+s+.01);g.gain.setValueAtTime(.07,t0+s+d-.03);g.gain.linearRampToValueAtTime(0,t0+s+d);
+      o.connect(g);g.connect(x.destination);o.start(t0+s);o.stop(t0+s+d+.02);});}catch(e){}}
+  function crew(){try{return CREW.find(c=>c.id==='AR')}catch(e){return null}}
+  function where(c){if(!c)return'unknown';try{return MODULES[c.module].label}catch(e){return c.module||'unknown'}}
+  function render(){
+    if(!sos){box.style.display='none';return}
+    const c=crew(),hr=c&&c.v&&c.v.hr?Math.round(c.v.hr)+' bpm':'—',spo2=c&&c.v&&c.v.spo2?c.v.spo2.toFixed(0)+'%':'—';
+    const s=Math.max(0,Math.round((Date.now()-sos.sent)/1000)),ago=Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+    box.className=sos.ended?'ended':sos.ack?'ack':'';
+    box.innerHTML=`<div class="sh"><span class="tag">${sos.ended?'ENDED':sos.ack?'ACKNOWLEDGED':'SOS'}</span><span class="who">${esc(sos.who)}</span><span class="ago">${ago} ago</span></div>
+      <div class="sb"><div class="grid">
+        <span>Situation</span><span><b>${esc(sos.path||'Crew is assessing')}</b></span>
+        <span>Pressed</span><span>EMERGENCY in the crew self-care app · mission time ${esc(sos.mission||'')}</span>
+        <span>Location</span><span>${esc(where(c))}</span>
+        <span>Vitals now</span><span>HR ${hr} · SpO₂ ${spo2} (smart shirt)</span>
+        <span>Crew notes</span><span>${sos.note?esc(sos.note):'<i>none yet</i>'}</span>
+        <span>Earth</span><span>Flight surgeon message queued automatically</span>
+      </div>
+      <div class="acts">${sos.ended?'<button class="b2" data-sos="close">Close</button>':
+        sos.ack?`<span>You acknowledged at ${esc(sos.ack)}. The crew sees “on the way”.</span><button class="b2" data-sos="close">Hide</button>`:
+        '<button class="b1" data-sos="ack">Acknowledge · on my way</button><button class="b2" data-sos="crew">Show crew card</button>'}</div></div>`;
+    box.style.display='block';
+  }
+  box.addEventListener('click',e=>{const b=e.target.closest('[data-sos]');if(!b||!sos)return;const a=b.dataset.sos;
+    if(a==='ack'){const t=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});sos.ack=t;clearInterval(beepT);
+      ch.postMessage({type:'ack',by:'Dr. K. Ito',at:t});try{addLog('warn','SOS acknowledged by the CMO','Dr. K. Ito is on the way to Aylin Rahimova.');}catch(err){}render();}
+    if(a==='crew'){try{document.getElementById('tabMission').click();}catch(err){}}
+    if(a==='close'){sos=null;clearInterval(agoT);render();}
+  });
+  ch.onmessage=e=>{const m=e.data||{};
+    if(m.type==='sos'){sos={who:m.who,mission:m.mission,path:m.path,note:'',sent:m.sent||Date.now()};
+      try{document.getElementById('tabMission').click();}catch(err){}
+      try{addLog('crit','SOS — '+m.who,'EMERGENCY pressed in the crew self-care app. CMO alerted; flight surgeon message queued.');}catch(err){}
+      clearInterval(beepT);beep();beepT=setInterval(beep,1600);clearInterval(agoT);agoT=setInterval(render,1000);render();}
+    if(m.type==='sos-update'&&sos){if(m.path)sos.path=m.path;if(m.note!=null)sos.note=m.note;render();}
+    if(m.type==='sos-end'&&sos){sos.ended=true;clearInterval(beepT);try{addLog('info','Emergency closed by crew — '+sos.who,'The crew ended the emergency screen. Follow-up stays open for the CMO.');}catch(err){}render();}
+  };
+})();
+</script>
+
 </body>
 </html>
