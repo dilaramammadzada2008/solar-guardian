@@ -403,7 +403,7 @@ body[data-tab=data] [data-tabs]:not([data-tabs~=data]){display:none!important}
   </section>
 </div>
 <div class="modal" id="guide" hidden><div class="mbox"><button class="x" id="guideX" aria-label="Close">×</button><div id="guideBody"></div></div></div>
-<div class="emg" id="emg" hidden><div class="emgtop"><b>EMERGENCY</b><span class="mono" id="emgClock">00:00</span><span class="al" id="emgAl">SOS sent to CMO Dr. K. Ito and the Commander · waiting for acknowledgement · flight surgeon message queued</span><button class="btn sec" id="emgEnd">End emergency</button></div><div class="emgwrap"><div id="emgBody"></div><aside class="emglink"><div class="lkh"><b>Link to Earth</b><button class="opt" id="lkIss" data-lk="iss">ISS today</button><button class="opt" id="lkMars" data-lk="mars">Mars</button><button class="opt" id="lkFast" title="Demo: speed up the signal">⏩ ×60</button></div><div id="lk3d"><span class="lkns">not to scale</span></div><div id="lkStat"></div></aside></div></div>
+<div class="emg" id="emg" hidden><div class="emgtop"><b>EMERGENCY</b><span class="mono" id="emgClock">00:00</span><span class="al" id="emgAl">SOS sent to CMO Dr. K. Ito and the Commander · waiting for acknowledgement · flight surgeon message queued</span><button class="btn" id="emgCmoHere" style="background:var(--gr);color:#06210F">✓ CMO is here</button><button class="btn sec" id="emgEnd">End emergency</button></div><div class="emgwrap"><div id="emgBody"></div><aside class="emglink"><div class="lkh"><b>Link to Earth</b><button class="opt" id="lkIss" data-lk="iss">ISS today</button><button class="opt" id="lkMars" data-lk="mars">Mars</button><button class="opt" id="lkFast" title="Demo: speed up the signal">⏩ ×60</button></div><div id="lk3d"><span class="lkns">not to scale</span></div><div id="lkStat"></div></aside></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -738,7 +738,7 @@ let EM=null,emTick=null,beatTimer=null,audio=null,beatOn=false;
 function emgOpen(){
   EM={mode:null,i:0,start:Date.now(),simT:S.now,note:'',fin:null,log:[]};emLog('Emergency opened · SOS sent to the CMO and the Commander');
   S.issues.push({id:'i'+(S.seq++),kind:'emg',t:'Emergency: crew alert',lvl:'rd',t0:S.now,log:[],cmo:true});save();
-  $('#emg').hidden=false;emgRender();LK.start('mars');bc({type:'sos',who:'Aylin Rahimova',mission:fmt(S.now),path:'Crew is assessing',sent:Date.now()});clearInterval(emTick);emTick=setInterval(emgClock,500);emgClock();render();
+  $('#emg').hidden=false;$('#emgCmoHere').hidden=false;emgRender();LK.start('mars');bc({type:'sos',who:'Aylin Rahimova',mission:fmt(S.now),path:'Crew is assessing',sent:Date.now()});clearInterval(emTick);emTick=setInterval(emgClock,500);emgClock();render();
 }
 function emLog(t){if(!EM)return;const L=EM.log[EM.log.length-1];if(L&&L.t===t)return;const s=Math.floor((Date.now()-EM.start)/1000);EM.log.push({at:String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'),t})}
 function emgClock(){if(!EM)return;const s=Math.floor((Date.now()-EM.start)/1000);$('#emgClock').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
@@ -785,7 +785,7 @@ function emgEnd(){
 const BC=('BroadcastChannel' in window)?new BroadcastChannel('solar-guardian'):null;
 function bc(m){try{BC&&BC.postMessage(m)}catch(e){}}
 if(BC)BC.onmessage=e=>{const m=e.data||{};
-  if(m.type==='ack'&&EM){EM.ack=m;emLog(m.by+' acknowledged · on the way');if(EM.fin)emgRender();const a=$('#emgAl');if(a){a.innerHTML='<span style="color:#3DDC97;font-weight:600">✓ '+esc(m.by)+' acknowledged at '+esc(m.at)+' · on the way</span> · flight surgeon message queued';}toast(m.by+' is on the way.');}
+  if(m.type==='ack'&&EM){EM.ack=m;$('#emgCmoHere').hidden=true;emLog(m.by+' acknowledged · on the way');if(EM.fin)emgRender();const a=$('#emgAl');if(a){a.innerHTML='<span style="color:#3DDC97;font-weight:600">✓ '+esc(m.by)+' acknowledged at '+esc(m.at)+' · on the way</span> · flight surgeon message queued';}toast(m.by+' is on the way.');}
 };
 
 /* ===== Live Earth–Mars light time (NASA Deep Space Network, DSN Now feed) ===== */
@@ -1236,6 +1236,9 @@ document.addEventListener('click',ev=>{
   if(b.id==='guideX'){$('#guide').hidden=true;return}
   if(b.id==='emgBtn'){emgOpen();return}
   if(b.id==='emgEnd'){emgEnd();return}
+  if(b.id==='emgCmoHere'&&EM){const at=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});EM.ack={by:'Dr. K. Ito',at,inPerson:true};b.hidden=true;
+    emLog('Dr. K. Ito is here (confirmed in person)');const a=$('#emgAl');if(a)a.innerHTML='<span style="color:#3DDC97;font-weight:600">✓ Dr. K. Ito is here · confirmed at '+at+'</span> · flight surgeon message queued';
+    bc({type:'sos-update',path:'CMO on scene (confirmed by crew)'});emgRender();toast('CMO confirmed on scene.');return}
   if(b.dataset.lk){LK.setMode(b.dataset.lk);return}
   if(b.id==='lkFast'){LK.fast();return}
   if(EM&&b.dataset.emfin){EM.fin=b.dataset.emfin;emLog(FIN_T[EM.fin]);bc({type:'sos-update',path:(EM.mode?EMG_T[EM.mode]+' → ':'')+FIN_T[EM.fin]});emgRender();return}
