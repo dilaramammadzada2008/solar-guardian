@@ -722,14 +722,14 @@ const EMG={
     {t:'Stay until the CMO takes over',x:'Keep the person resting and keep talking to them. If they stop responding, switch to the "Not responding" steps straight away.',jump:'unresp',fin:[['The CMO is with the person now','cmo'],['Pain has eased, CMO will examine today','eased']]},
   ],
   unresp:[
-    {t:'Shout for help',x:'The CMO and the Commander were alerted automatically. Call out to the rest of the crew.'},
+    {t:'Shout for help, send for the AED',x:'Call out to the crew and send someone for the defibrillator (AED) and the medical kit now. The CMO and the Commander were alerted automatically.'},
     {t:'Check breathing: 10 seconds at most',x:'Look at the chest. Gasping is not normal breathing.',opts:[['Breathing normally','breathing'],['Not breathing normally','cpr']]},
   ],
-  breathing:[{t:'Keep them secured and watch',x:'Stay with them and check breathing again and again until the CMO takes over. If breathing stops, go to chest compressions.',jump:'cpr',fin:[['The CMO has taken over','cmo']]}],
+  breathing:[{t:'Keep them secured and watch',x:'Keep the airway open, keep them secured, and check breathing every minute until the CMO takes over. If breathing stops, start chest compressions.',jump:'cpr',fin:[['The CMO has taken over','cmo']]}],
   cpr:[
-    {t:'Start chest compressions now',x:'Centre of the chest, hard and fast: 100–120 a minute, 5–6 cm deep. Follow the beat.',beat:true,method:true},
-    {t:'Get the defibrillator (AED)',x:'A second crew member brings the AED from the medical kit, switches it on and follows its voice. Keep compressions going until it says stop.',beat:true},
-    {t:'Keep going',x:'Do not stop until the CMO takes over, the AED tells you to, or the person starts breathing.',beat:true,fin:[['The CMO has taken over CPR','cmo'],['The person is breathing again','breathing']]},
+    {t:'Start chest compressions now',x:'Centre of the chest, hard and fast: 100–120 a minute, 5–6 cm deep. Follow the beat. If you are trained: 2 rescue breaths after every 30 compressions; if not, keep pushing without stopping.',beat:true,method:true},
+    {t:'Use the defibrillator (AED)',x:'Switch it on as soon as it arrives and follow its voice. Stop compressions only while it analyses or gives a shock, then restart at once.',beat:true},
+    {t:'Keep going',x:'Swap the person pushing every 2 minutes so the compressions stay strong. Do not stop until the CMO takes over or the person breathes normally.',beat:true,fin:[['The CMO has taken over CPR','cmo'],['The person is breathing again','breathing']]},
   ],
 };
 const FIN_T={cmo:'Handed over to the CMO',eased:'Pain eased · CMO exam today',breathing:'Breathing again · CMO taking over'};
@@ -740,7 +740,7 @@ function emgOpen(){
   S.issues.push({id:'i'+(S.seq++),kind:'emg',t:'Emergency: crew alert',lvl:'rd',t0:S.now,log:[],cmo:true});save();
   $('#emg').hidden=false;emgRender();LK.start('mars');bc({type:'sos',who:'Aylin Rahimova',mission:fmt(S.now),path:'Crew is assessing',sent:Date.now()});clearInterval(emTick);emTick=setInterval(emgClock,500);emgClock();render();
 }
-function emLog(t){if(!EM)return;const s=Math.floor((Date.now()-EM.start)/1000);EM.log.push({at:String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'),t})}
+function emLog(t){if(!EM)return;const L=EM.log[EM.log.length-1];if(L&&L.t===t)return;const s=Math.floor((Date.now()-EM.start)/1000);EM.log.push({at:String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'),t})}
 function emgClock(){if(!EM)return;const s=Math.floor((Date.now()-EM.start)/1000);$('#emgClock').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
 function emgRender(){
   const B=$('#emgBody');let h='';
@@ -765,7 +765,7 @@ function emgRender(){
 function emgSummary(){
   const el=(Date.now()-EM.start)/1000,ow=LINK.s,arr=Math.max(0,ow-el),rep=Math.max(0,2*ow-el);
   return `<div class="eok">Emergency handed over</div><div class="eq">✓ ${esc(FIN_T[EM.fin])}</div>
-    <div class="ex">Dr. K. Ito leads the care from here. You can close this screen.</div>
+    <div class="ex">${EM.ack?`Dr. K. Ito confirmed at ${esc(EM.ack.at)} and leads the care from here. You can close this screen.`:'Dr. K. Ito has not confirmed in the app yet. Make sure the CMO is with the person before you close this screen.'}</div>
     <div class="esum"><div class="gl">What happened</div><ol>${EM.log.map(x=>`<li><span class="mono">${x.at}</span> · ${esc(x.t)}</li>`).join('')}</ol>${EM.note?`<div style="margin-top:8px;color:#F1D9DE">Your notes: “${esc(EM.note)}”</div>`:''}</div>
     <div class="esum"><div class="gl">What happens next</div><ul>
       <li><b>Dr. K. Ito (CMO, on board):</b> examination and treatment decision.</li>
@@ -1243,7 +1243,7 @@ document.addEventListener('click',ev=>{
   if(EM&&b.hasAttribute('data-emclose')){emgEnd();return}
   if(EM&&b.dataset.em){EM.mode=b.dataset.em;EM.i=0;emLog('Situation: '+EMG_T[EM.mode]);emgRender();bc({type:'sos-update',path:EMG_T[EM.mode]});return}
   if(EM&&b.hasAttribute('data-emnext')){emLog('Done: '+EMG[EM.mode][EM.i].t);EM.i++;emgRender();return}
-  if(EM&&b.hasAttribute('data-emback')){if(EM.i>0)EM.i--;else EM.mode=null;emgRender();return}
+  if(EM&&b.hasAttribute('data-emback')){if(EM.i>0)EM.i--;else EM.mode=null;emLog('Went back to: '+(EM.mode?EMG[EM.mode][EM.i].t:'Can the person answer you?'));emgRender();return}
   if(EM&&b.hasAttribute('data-beatsnd')){beatOn=!beatOn;beatOn?startBeat():stopBeat();emgRender();return}
   if(b.dataset.sys){bodySelect(b.dataset.sys);return}
   if(b.dataset.sysym){S.tab='log';save();render();$('#sySel').value=b.dataset.sysym;$('#sySel').scrollIntoView({behavior:'smooth',block:'center'});$('#sySel').focus();return}
