@@ -841,9 +841,10 @@ function renderReport(){
 function renderSrcs(){
   const R=[
     ['Wearable physiology','Smart shirt: ECG, heart rate, breathing, SpO₂, skin temperature (like CSA’s Bio-Monitor on the ISS)','2 min'],
-    ['Point-of-care','Medical kit: blood pressure (morning), labs when ordered','06:50'],
-    ['Sleep','Sleep sensor (actigraphy)','06:35'],
-    ['Countermeasures','Exercise device: prescribed vs completed load','09:42'],
+    ['Point-of-care','Medical kit: blood pressure (morning), labs when ordered',S.now>=410?'06:50':'waiting · 06:50',S.now<410?'w':''],
+    ['Sleep','Sleep sensor (actigraphy)',S.now>=395?'06:35':'syncing',S.now<395?'w':''],
+    // last upload follows the simulated day: nothing before a session, then its end time
+    ['Countermeasures','Exercise device: prescribed vs completed load',S.now>=1290?'21:30':S.now>=1200?'CEVIS in progress':S.now>=EX_END?fmt(EX_END):S.now>=540?'ARED in progress':'waiting · 09:00',S.now<540||(S.now>=1200&&S.now<1290)||(S.now>=540&&S.now<EX_END)?'w':''],
     ['Environment','Cabin atmosphere system + personal CO₂ monitor (tested on the ISS)','1 min'],
     ['Radiation','Personal dosimeter','5 min'],
     ['Crew schedule','Planned activities, used to explain changes','06:00'],
@@ -851,7 +852,7 @@ function renderSrcs(){
     ['Earth link','NASA Deep Space Network (DSN Now feed): today’s real Earth–Mars light time',LINK.live?'live':'—'],
     ['Medical evidence','NASA Integrated Medical Model: 100-condition list used to classify each item','ref'],
   ];
-  $('#srcs').innerHTML=R.map(r=>`<div class="s"><div>${r[0]}<small>${r[1]}</small></div><div class="st">● ${r[2]}</div></div>`).join('');
+  $('#srcs').innerHTML=R.map(r=>`<div class="s"><div>${r[0]}<small>${r[1]}</small></div><div class="st"${r[3]==='w'?' style="color:var(--mut)"':''}>${r[3]==='w'?'○':'●'} ${r[2]}</div></div>`).join('');
 }
 
 /* ===== Body systems ===== */
