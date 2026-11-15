@@ -55,6 +55,15 @@ Mentors asked us: *who is the user, the astronaut or the doctor?* Our answer is 
 | “Too complex for an astronaut” | Five simple tabs, one question at a time, one EMERGENCY button. |
 | “Not numbers: what happened at that time?” | Plain words on screen; the astronaut adds the reason in one tap. Numbers are hidden unless *Clinical details* is switched on. |
 | “NASA already has systems: integrate” | The app measures nothing itself. It is designed to read the devices already on board (Section 9) and follows NASA’s own concept (Section 8). |
+| “Who do you see as the buyer?” | See *Who would buy it* below. |
+
+### Who would buy it
+
+The **user** is the astronaut. The **buyer** is whoever flies crews far from a doctor:
+
+- **Space agencies planning Moon and Mars missions.** NASA’s EIMO programme exists to move medical decisions on board; ESA, JAXA and CSA face the same delay.
+- **Commercial space stations** (for example Axiom, Vast). Their crews often have no doctor on board, and the operator is responsible for crew health.
+- **Analog missions** such as NASA’s HERA and CHAPEA, which simulate isolation and communication delay on Earth: the natural first place to test it.
 
 ## 4. How it works
 
@@ -132,7 +141,7 @@ One pulsing **EMERGENCY** button. Pressing it sends an SOS to the CMO and the Co
 
 ## 8. Built on NASA’s plans
 
-NASA does not have this app. It has published the concept that Solar Guardian follows:
+NASA’s tools so far support the medical officer. Solar Guardian is the crew-facing side of the same concept, which NASA has published:
 
 - **NASA ExMC, Clinical Decision Support System Concept of Operations** (HRP-48033, 2022). Crew members log symptoms themselves, follow-up uses *resolved / improved / no change / worsened*, and when several crew are affected the system checks the cabin first.
 - **Earth-Independent Medical Operations (EIMO) Concept of Operations** (2025). Medical decisions move gradually from Earth to the spacecraft. The CMO can become the patient, so every crew member must be able to use the system.
@@ -196,6 +205,7 @@ About 90 seconds. Press **Reset** first.
 
 - The DSN Now feed is public but not a documented API. If it cannot be reached, the app uses a scenario value (14 min 32 s) and says so.
 - There is no AI inside the app. Decisions come from simple, transparent rules.
+- **No sign-in in the prototype, on purpose.** The health data is simulated, so there is nothing private to protect yet. On a real mission the tablet sits on the spacecraft’s closed network, and sign-in for private parts (the private message, your own health history) would come from the agency’s own system. **The EMERGENCY button stays one tap with no login, by design:** NASA’s EIMO concept notes that the medical officer can become the patient, so any crewmate must be able to start the emergency steps immediately.
 
 ## 13. Use of Super Intelligence (SI) tools
 
