@@ -173,7 +173,11 @@ button{cursor:pointer}
 body:not(.clin) .clin-only{display:none!important}
 .tog{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--mut);cursor:pointer;white-space:nowrap}
 .tog input{accent-color:var(--cy)}
-.emgbtn{background:var(--rd);color:#2A0710;border:0;border-radius:9px;padding:8px 16px;font-weight:700;letter-spacing:.5px;box-shadow:0 0 0 3px rgba(255,122,140,.18)}
+.emgbtn{background:var(--rd);color:#2A0710;border:0;border-radius:9px;padding:8px 16px;font-weight:700;letter-spacing:.5px;box-shadow:0 0 0 3px rgba(255,122,140,.18);animation:emgPulse 1.6s ease-in-out infinite}
+/* slow pulse (under 1 flash per second, safe for photosensitive viewers); off for reduced motion */
+@keyframes emgPulse{0%,100%{background:var(--rd);box-shadow:0 0 0 3px rgba(255,122,140,.18)}50%{background:#FF4D66;box-shadow:0 0 0 9px rgba(255,77,102,.32),0 0 22px rgba(255,77,102,.55)}}
+.emgbtn:hover{animation-play-state:paused}
+@media (prefers-reduced-motion:reduce){.emgbtn{animation:none}}
 .kpi .m{font-size:13px;color:var(--ink2);margin-top:2px}
 .kpi .how{display:flex;flex-direction:column;align-items:flex-start;gap:2px;margin-top:6px}
 .kpi .how .lnk{font-size:12px}
@@ -741,7 +745,10 @@ function emgOpen(){
   $('#emg').hidden=false;$('#emgCmoHere').hidden=false;emgRender();LK.start('mars');bc({type:'sos',who:'Aylin Rahimova',mission:fmt(S.now),path:'Crew is assessing',sent:Date.now()});clearInterval(emTick);emTick=setInterval(emgClock,500);emgClock();render();
 }
 function emLog(t){if(!EM)return;const L=EM.log[EM.log.length-1];if(L&&L.t===t)return;const s=Math.floor((Date.now()-EM.start)/1000);EM.log.push({at:String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'),t})}
-function emgClock(){if(!EM)return;const s=Math.floor((Date.now()-EM.start)/1000);$('#emgClock').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function emgClock(){if(!EM)return;const s=Math.floor((Date.now()-EM.start)/1000);$('#emgClock').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+  // keep the summary's Earth arrival / reply countdown in step with the Link to Earth panel
+  if(EM.fin){const el=(Date.now()-EM.start)/1000,ow=LINK.s,arr=Math.max(0,ow-el),rep=Math.max(0,2*ow-el),e=$('#emgEta');
+    if(e)e.innerHTML=(arr>0?`arrive in <span class="mono">${mmss(arr)}</span>`:'have arrived')+'; reply '+(rep>0?`expected in <span class="mono">${mmss(rep)}</span>`:'should be in')+'.';}}
 function emgRender(){
   const B=$('#emgBody');let h='';
   if(EM.fin){B.innerHTML=emgSummary();stopBeat();return}
@@ -769,7 +776,7 @@ function emgSummary(){
     <div class="esum"><div class="gl">What happened</div><ol>${EM.log.map(x=>`<li><span class="mono">${x.at}</span> · ${esc(x.t)}</li>`).join('')}</ol>${EM.note?`<div style="margin-top:8px;color:#F1D9DE">Your notes: “${esc(EM.note)}”</div>`:''}</div>
     <div class="esum"><div class="gl">What happens next</div><ul>
       <li><b>Dr. K. Ito (CMO, on board):</b> examination and treatment decision.</li>
-      <li><b>Flight surgeon on Earth:</b> your SOS and data ${arr>0?`arrive in <span class="mono">${mmss(arr)}</span>`:'have arrived'}; reply ${rep>0?`expected in <span class="mono">${mmss(rep)}</span>`:'should be in'}.</li>
+      <li><b>Flight surgeon on Earth:</b> your SOS and data <span id="emgEta">${arr>0?`arrive in <span class="mono">${mmss(arr)}</span>`:'have arrived'}; reply ${rep>0?`expected in <span class="mono">${mmss(rep)}</span>`:'should be in'}.</span></li>
       <li><b>Follow-up:</b> an open item is in <i>Health items &amp; report</i>, with this summary.</li></ul></div>
     <div class="enav"><button class="btn" data-emclose>Close emergency screen</button><button class="btn sec" data-emunfin>Back to the steps</button></div>`;
 }
