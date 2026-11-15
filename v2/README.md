@@ -55,15 +55,6 @@ Mentors asked us: *who is the user, the astronaut or the doctor?* Our answer is 
 | “Too complex for an astronaut” | Five simple tabs, one question at a time, one EMERGENCY button. |
 | “Not numbers: what happened at that time?” | Plain words on screen; the astronaut adds the reason in one tap. Numbers are hidden unless *Clinical details* is switched on. |
 | “NASA already has systems: integrate” | The app measures nothing itself. It is designed to read the devices already on board (Section 9) and follows NASA’s own concept (Section 8). |
-| “Who do you see as the buyer?” | See *Who would buy it* below. |
-
-### Who would buy it
-
-The **user** is the astronaut. The **buyer** is whoever flies crews far from a doctor:
-
-- **Space agencies planning Moon and Mars missions.** NASA’s EIMO programme exists to move medical decisions on board; ESA, JAXA and CSA face the same delay.
-- **Commercial space stations** (for example Axiom, Vast). Their crews often have no doctor on board, and the operator is responsible for crew health.
-- **Analog missions** such as NASA’s HERA and CHAPEA, which simulate isolation and communication delay on Earth: the natural first place to test it.
 
 ## 4. How it works
 
