@@ -196,7 +196,7 @@ About 90 seconds. Press **Reset** first.
 
 - The DSN Now feed is public but not a documented API. If it cannot be reached, the app uses a scenario value (14 min 32 s) and says so.
 - There is no AI inside the app. Decisions come from simple, transparent rules.
-- **No sign-in in the prototype, on purpose.** The health data is simulated, so there is nothing private to protect yet. On a real mission the tablet sits on the spacecraft’s closed network, and sign-in for private parts (the private message, your own health history) would come from the agency’s own system. **The EMERGENCY button stays one tap with no login, by design:** NASA’s EIMO concept notes that the medical officer can become the patient, so any crewmate must be able to start the emergency steps immediately.
+- **No sign-in in the prototype, on purpose.** The health data is simulated, so there is nothing private to protect yet, and no data leaves the device: it stays in the browser and is never sent to a server. The only network read is the Mars delay from NASA DSN, and the SOS goes only to the CMO screen in the same browser. On a real mission the tablet sits on the spacecraft’s closed network, and sign-in for private parts (the private message, your own health history) would come from the agency’s own system. **The EMERGENCY button stays one tap with no login, by design:** NASA’s EIMO concept notes that the medical officer can become the patient, so any crewmate must be able to start the emergency steps immediately.
 
 ## 13. Use of Super Intelligence (SI) tools
 
